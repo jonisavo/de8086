@@ -1,4 +1,4 @@
-use std::io::{BufWriter, Stdout};
+use crate::writer::Writer;
 
 use super::{
     common::{
@@ -8,6 +8,7 @@ use super::{
     description::Description,
 };
 
+#[derive(Debug)]
 pub struct Instruction {
     pub length: u8,
     pub data: InstructionData,
@@ -19,7 +20,7 @@ pub struct Instruction {
 }
 
 impl Instruction {
-    pub fn write(&self, writer: &mut BufWriter<Stdout>) {
+    pub fn write(&self, writer: &mut Writer) {
         (self.description.write_fn)(writer, self);
     }
 
@@ -67,12 +68,10 @@ impl Instruction {
 
     fn address_to_string(&self, address: RM) -> String {
         let mut string = String::new();
-        let mode: Mode;
+        let mut mode = Mode::RegisterMode;
 
         if let InstructionData::Fields(fields) = &self.data {
             mode = fields.mode;
-        } else {
-            return string;
         }
 
         match address {
@@ -82,9 +81,8 @@ impl Instruction {
             RM::Eff(eff) => {
                 string.push_str(&self.effective_to_string(eff, mode));
                 let is_direct_address = eff == Effective::DirectAddress && mode == Mode::MemoryMode;
-                let include_sum = !is_direct_address && self.disp > 0;
 
-                if include_sum {
+                if !is_direct_address && self.disp != 0 {
                     string.push_str(&format!("+{:x}h", self.disp));
                 }
 

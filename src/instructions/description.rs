@@ -1,38 +1,58 @@
-use std::io::{BufWriter, Stdout};
+use std::fmt::Debug;
+
+use crate::writer::Writer;
 
 use super::instruction::Instruction;
 
 pub struct Description {
-    pub constants_length_bits: u8,
-    pub constants_mask: u16,
-    pub constants: u16,
-    pub parse_fn: fn(&[u8]) -> Option<Instruction>,
-    pub write_fn: fn(&mut BufWriter<Stdout>, &Instruction),
+    pub constants_mask: u8,
+    pub constants: u8,
+    pub parse_fn: fn(&[u8]) -> Instruction,
+    pub write_fn: fn(&mut Writer, &Instruction),
 }
 
 impl Description {
-    pub fn matches(&self, instruction: u16) -> bool {
-        (instruction & self.constants_mask) == self.constants
+    pub fn matches(&self, byte: u8) -> bool {
+        (byte & self.constants_mask) == self.constants
     }
 
-    pub fn parse(&'static self, bytes: &[u8]) -> Option<Instruction> {
+    pub fn parse(&'static self, bytes: &[u8]) -> Instruction {
         (self.parse_fn)(bytes)
+    }
+}
+
+impl Debug for Description {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Description")
+            .field("constants_mask", &self.constants_mask)
+            .field("constants", &self.constants)
+            .finish()
     }
 }
 
 pub mod descriptions {
     pub mod mov {
-        use crate::instructions::mov::{parse_mov_to_register, write_mov_to_register};
+        use crate::instructions::mov::{
+            parse_mov_immediate_to_register, parse_mov_to_register,
+            write_mov_immediate_to_register, write_mov_to_register,
+        };
 
         use super::super::Description;
         pub const TO_REGISTER: Description = Description {
-            constants_length_bits: 6,
-            constants_mask: 0b1111110000000000,
-            constants: 0b1000100000000000,
+            constants_mask: 0b11111100,
+            constants: 0b10001000,
             parse_fn: parse_mov_to_register,
             write_fn: write_mov_to_register,
+        };
+        pub const IMMEDIATE_TO_REGISTER: Description = Description {
+            constants_mask: 0b11110000,
+            constants: 0b10110000,
+            parse_fn: parse_mov_immediate_to_register,
+            write_fn: write_mov_immediate_to_register,
         };
     }
 }
 
-pub const DESCRIPTIONS: &[&Description] = &[&descriptions::mov::TO_REGISTER];
+use descriptions::*;
+
+pub const DESCRIPTIONS: &[&'static Description] = &[&mov::TO_REGISTER, &mov::IMMEDIATE_TO_REGISTER];

@@ -1,24 +1,36 @@
 pub mod instructions;
-pub use crate::instructions::description::DESCRIPTIONS;
 pub use crate::instructions::instruction::Instruction;
-mod io;
+pub use crate::instructions::DESCRIPTIONS;
 pub mod parser;
+pub mod writer;
 
-use io::{read_file, write_comment, write_line};
-use std::io::{stdout, BufWriter};
+use std::io::{stdout, Read, Write};
+use writer::Writer;
+
+fn read_file(filename: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut file = std::fs::File::open(filename)?;
+
+    let mut buffer: Vec<u8> = Vec::new();
+
+    file.read_to_end(&mut buffer)?;
+
+    return Ok(buffer);
+}
 
 pub fn run(file_name: &str, bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut stdout_writer = BufWriter::new(stdout());
+    let mut writer = Writer::new();
     let parser = parser::Parser::build(bytes)?;
 
-    write_comment(&mut stdout_writer, file_name);
-    write_line(&mut stdout_writer, "");
-    write_line(&mut stdout_writer, "bits 16");
-    write_line(&mut stdout_writer, "");
+    writer.write_comment(file_name);
+    writer.end_line();
+    writer.write(b"bits 16");
+    writer.end_line();
 
     for instruction in parser {
-        instruction.write(&mut stdout_writer);
+        instruction.write(&mut writer);
     }
+
+    stdout().write_all(writer.as_slice()).unwrap();
 
     Ok(())
 }

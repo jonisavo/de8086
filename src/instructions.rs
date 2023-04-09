@@ -1,4 +1,5 @@
 pub mod common;
-pub mod description;
+mod description;
+pub use description::{descriptions, Description, DESCRIPTIONS};
 pub mod instruction;
 pub mod mov;
