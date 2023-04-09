@@ -1,30 +1,16 @@
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-pub enum OpCode {
-    MOV = 0b100010,
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Mode {
+    MemoryMode = 0b00,
+    ByteDisplacement = 0b01,
+    WordDisplacement = 0b10,
+    RegisterMode = 0b11,
 }
 
-impl TryFrom<u8> for OpCode {
-    type Error = ();
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            x if x == OpCode::MOV as u8 => Ok(OpCode::MOV),
-            _ => Err(()),
-        }
-    }
-}
-
-pub fn get_mode(instruction: u16) -> Mode {
-    let first_byte = instruction as u8 >> 6;
-    match first_byte & 0b11 {
-        0b00 => {
-            if get_rm_effective_address(instruction) == RM::Effective(RMValue::DirectAddress) {
-                Mode::WordDisplacement
-            } else {
-                Mode::MemoryMode
-            }
-        }
+/// Fetches the mode from the given byte's 2 most significant bits.
+pub fn get_mode(byte: u8) -> Mode {
+    match byte >> 6 {
+        0b00 => Mode::MemoryMode,
         0b01 => Mode::ByteDisplacement,
         0b10 => Mode::WordDisplacement,
         0b11 => Mode::RegisterMode,
@@ -32,29 +18,55 @@ pub fn get_mode(instruction: u16) -> Mode {
     }
 }
 
-pub fn get_rm(instruction: u16, mode: Mode) -> RM {
-    if mode == Mode::RegisterMode {
-        get_rm_register(instruction)
-    } else {
-        get_rm_effective_address(instruction)
+#[test]
+fn test_get_mode() {
+    assert_eq!(get_mode(0b00000000), Mode::MemoryMode);
+    assert_eq!(get_mode(0b01000000), Mode::ByteDisplacement);
+    assert_eq!(get_mode(0b10000000), Mode::WordDisplacement);
+    assert_eq!(get_mode(0b11000000), Mode::RegisterMode);
+}
+
+pub fn get_displacement_amount(byte: u8) -> u8 {
+    match get_mode(byte) {
+        Mode::MemoryMode => {
+            if get_rm_effective_address(byte) == EFFECTIVE_DIRECT_ADDRESS {
+                2
+            } else {
+                0
+            }
+        }
+        Mode::ByteDisplacement => 1,
+        Mode::WordDisplacement => 2,
+        Mode::RegisterMode => 0,
     }
 }
 
-pub fn get_to_register(instruction: u16) -> bool {
-    (instruction >> 9) & 0b1 == 0b1
+#[test]
+fn test_get_displacement_amount() {
+    assert_eq!(get_displacement_amount(0b00000000), 0);
+    assert_eq!(get_displacement_amount(0b00000110), 2);
+    assert_eq!(get_displacement_amount(0b01000000), 1);
+    assert_eq!(get_displacement_amount(0b10000000), 2);
+    assert_eq!(get_displacement_amount(0b11000000), 0);
 }
 
-pub fn get_word(instruction: u16) -> bool {
-    (instruction >> 8) & 0b1 == 0b1
+pub fn get_disp_value(bytes: &[u8], displacement: u8, offset: usize) -> u16 {
+    match displacement {
+        1 => bytes[offset] as u16,
+        2 => ((bytes[offset + 1] as u16) << 8) | bytes[offset] as u16,
+        _ => 0,
+    }
 }
 
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Mode {
-    MemoryMode = 0b00,
-    ByteDisplacement = 0b01,
-    WordDisplacement = 0b10,
-    RegisterMode = 0b11,
+#[test]
+fn test_get_disp_value() {
+    let bytes = [0x01, 0x02, 0x03];
+
+    assert_eq!(get_disp_value(&bytes, 0, 0), 0x00);
+    assert_eq!(get_disp_value(&bytes, 1, 0), 0x01);
+    assert_eq!(get_disp_value(&bytes, 2, 0), 0x0201);
+    assert_eq!(get_disp_value(&bytes, 0, 0), 0x00);
+    assert_eq!(get_disp_value(&bytes, 2, 1), 0x0302);
 }
 
 #[repr(u8)]
@@ -70,6 +82,7 @@ pub enum Register {
     DI = 0b111,
 }
 
+/// Fetches the register from the given byte's 3 least significant bits.
 pub fn get_register(value: u8) -> Register {
     match value & 0b111 {
         0b000 => Register::AX,
@@ -84,9 +97,21 @@ pub fn get_register(value: u8) -> Register {
     }
 }
 
+#[test]
+fn test_get_register() {
+    assert_eq!(get_register(0b000), Register::AX);
+    assert_eq!(get_register(0b1001), Register::CX);
+    assert_eq!(get_register(0b10010), Register::DX);
+    assert_eq!(get_register(0b011), Register::BX);
+    assert_eq!(get_register(0b100), Register::SP);
+    assert_eq!(get_register(0b101), Register::BP);
+    assert_eq!(get_register(0b11111110), Register::SI);
+    assert_eq!(get_register(0b111), Register::DI);
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum RMValue {
+pub enum Effective {
     BXPlusSI = 0b000,
     BXPlusDI = 0b001,
     BPPlusSI = 0b010,
@@ -97,68 +122,81 @@ pub enum RMValue {
     BX = 0b111,
 }
 
+pub const EFFECTIVE_ADDRESS_STRINGS: [&str; 8] = [
+    "[bx+si", "[bx+di", "[bp+si", "[bp+di", "[si", "[di", "[bp", "[bx",
+];
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RM {
-    Register(Register),
-    Effective(RMValue),
+    Reg(Register),
+    Eff(Effective),
 }
 
-pub fn get_rm_effective_address(instruction: u16) -> RM {
-    match instruction & 0b111 {
-        0b000 => RM::Effective(RMValue::BXPlusSI),
-        0b001 => RM::Effective(RMValue::BXPlusDI),
-        0b010 => RM::Effective(RMValue::BPPlusSI),
-        0b011 => RM::Effective(RMValue::BPPlusDI),
-        0b100 => RM::Effective(RMValue::SI),
-        0b101 => RM::Effective(RMValue::DI),
-        0b110 => RM::Effective(RMValue::DirectAddress),
-        0b111 => RM::Effective(RMValue::BX),
+const EFFECTIVE_DIRECT_ADDRESS: RM = RM::Eff(Effective::DirectAddress);
+
+/// Fetches the R/M value from the given byte's 3 least significant bits.
+pub fn get_rm(byte: u8, mode: Mode) -> RM {
+    if mode == Mode::RegisterMode {
+        get_rm_register(byte)
+    } else {
+        get_rm_effective_address(byte)
+    }
+}
+
+#[test]
+fn test_get_rm() {
+    assert_eq!(get_rm(0b011, Mode::RegisterMode), RM::Reg(Register::BX));
+    assert_eq!(
+        get_rm(0b01110, Mode::MemoryMode),
+        RM::Eff(Effective::DirectAddress)
+    );
+    assert_eq!(
+        get_rm(0b11111111, Mode::ByteDisplacement),
+        RM::Eff(Effective::BX)
+    );
+    assert_eq!(
+        get_rm(0b010, Mode::WordDisplacement),
+        RM::Eff(Effective::BPPlusSI)
+    );
+}
+
+fn get_rm_effective_address(byte: u8) -> RM {
+    match byte & 0b111 {
+        0b000 => RM::Eff(Effective::BXPlusSI),
+        0b001 => RM::Eff(Effective::BXPlusDI),
+        0b010 => RM::Eff(Effective::BPPlusSI),
+        0b011 => RM::Eff(Effective::BPPlusDI),
+        0b100 => RM::Eff(Effective::SI),
+        0b101 => RM::Eff(Effective::DI),
+        0b110 => RM::Eff(Effective::DirectAddress),
+        0b111 => RM::Eff(Effective::BX),
         _ => unreachable!(),
     }
 }
 
-pub fn get_rm_register(instruction: u16) -> RM {
-    RM::Register(get_register(instruction << 3))
+fn get_rm_register(instruction: u8) -> RM {
+    RM::Reg(get_register(instruction))
 }
 
-pub fn get_word_register_string(register: Register) -> &'static str {
-    match register {
-        Register::AX => "ax",
-        Register::CX => "cx",
-        Register::DX => "dx",
-        Register::BX => "bx",
-        Register::SP => "sp",
-        Register::BP => "bp",
-        Register::SI => "si",
-        Register::DI => "di",
-    }
-}
+pub const WORD_REGISTER_STRINGS: [&str; 8] = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di"];
 
-pub fn get_byte_register_string(register: Register) -> &'static str {
-    match register {
-        Register::AX => "al",
-        Register::CX => "cl",
-        Register::DX => "dl",
-        Register::BX => "bl",
-        Register::SP => "ah",
-        Register::BP => "ch",
-        Register::SI => "dh",
-        Register::DI => "bh",
-    }
-}
+pub const BYTE_REGISTER_STRINGS: [&str; 8] = ["al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"];
 
 #[derive(Debug)]
 pub struct InstructionFields {
-    pub to_register: bool,
+    // Instruction operates on word
     pub word: bool,
-}
-
-#[derive(Debug)]
-pub struct InstructionHeader {
-    pub op_code: OpCode,
-    pub register: Register,
-    pub fields: InstructionFields,
+    /// Sign extend 8-bit immediate data to 16 bits if word flag is set
+    pub sign: bool,
+    /// If true, instruction destination is specified in the register field,
+    /// otherwise the source is in the register field
+    pub direction: bool,
+    /// If false, shift/rotate count is one, otherwise it is in the CL register
+    pub shift_rotate: bool,
+    /// If false, repeat/loop while zero flag is cleared, otherwise repeat/loop
+    /// while zero flag is set
+    pub zero: bool,
 }
 
 #[derive(Debug)]
@@ -170,35 +208,61 @@ pub struct InstructionDataFields {
 #[derive(Debug)]
 pub enum InstructionData {
     Fields(InstructionDataFields),
-    Data(u16),
+    Data(u8),
 }
 
-pub fn parse_instruction_header(data: u8) -> Result<InstructionHeader, ()> {
-    let op_code = OpCode::try_from(data >> 2)?;
+impl InstructionData {
+    pub fn parse_fields(byte: u8) -> InstructionData {
+        let mode = get_mode(byte);
+        let rm = get_rm(byte, mode);
 
-    Ok(InstructionHeader {
-        op_code,
-        register: get_register(data),
-        fields: InstructionFields {
-            to_register: get_to_register(data),
-            word: get_word(data),
-        },
-    })
+        InstructionData::Fields(InstructionDataFields { mode, rm })
+    }
 }
 
-pub fn parse_instruction_data_fields(data: u16) -> InstructionData {
-    let mode = get_mode(data);
+#[test]
+fn test_instruction_data_fields_parse() {
+    let fields = match InstructionData::parse_fields(0b11000001) {
+        InstructionData::Fields(fields) => fields,
+        _ => unreachable!(),
+    };
+    assert_eq!(fields.mode, Mode::RegisterMode);
+    assert_eq!(fields.rm, RM::Reg(Register::CX));
 
-    InstructionData::Fields(InstructionDataFields {
-        mode,
-        rm: get_rm(data, mode),
-    })
+    let fields = match InstructionData::parse_fields(0b00000100) {
+        InstructionData::Fields(fields) => fields,
+        _ => unreachable!(),
+    };
+    assert_eq!(fields.mode, Mode::MemoryMode);
+    assert_eq!(fields.rm, RM::Eff(Effective::SI));
 }
 
-#[derive(Debug)]
-pub struct Instruction {
-    pub header: InstructionHeader,
-    pub data: InstructionData,
-    pub disp: u16,
-    pub additional_data: u16,
+pub fn parse_instruction_fields(byte: u8) -> InstructionFields {
+    let first_flag = byte & 0b1 == 0b1;
+    let second_flag = (byte >> 1) & 0b1 == 0b1;
+
+    InstructionFields {
+        word: first_flag,
+        sign: second_flag,
+        direction: second_flag,
+        shift_rotate: second_flag,
+        zero: first_flag,
+    }
+}
+
+#[test]
+fn test_parse_instruction_fields() {
+    let fields = parse_instruction_fields(0b00000001);
+    assert_eq!(fields.word, true);
+    assert_eq!(fields.sign, false);
+    assert_eq!(fields.direction, false);
+    assert_eq!(fields.shift_rotate, false);
+    assert_eq!(fields.zero, true);
+
+    let fields = parse_instruction_fields(0b00000010);
+    assert_eq!(fields.word, false);
+    assert_eq!(fields.sign, true);
+    assert_eq!(fields.direction, true);
+    assert_eq!(fields.shift_rotate, true);
+    assert_eq!(fields.zero, false);
 }
