@@ -1,3 +1,5 @@
+use crate::Instruction;
+
 pub struct Writer {
     buffer: Vec<u8>,
 }
@@ -27,6 +29,14 @@ impl Writer {
 
     pub fn write_comment(&mut self, comment: &str) -> &mut Self {
         self.write(b"; ").write_string(comment).end_line()
+    }
+
+    pub fn write_with_w_flag(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
+        if instruction.fields.word {
+            self.write(format!("{:#006x}", value).as_bytes())
+        } else {
+            self.write(format!("{:#004x}", value).as_bytes())
+        }
     }
 
     pub fn end_line(&mut self) -> &mut Self {
