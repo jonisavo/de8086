@@ -23,7 +23,7 @@ pub fn write_mov_immediate_to_register(writer: &mut Writer, instruction: &Instru
         .write(b"mov ")
         .write_string(&instruction.destination_string())
         .write_comma_separator()
-        .write_with_w_flag(instruction.disp, instruction)
+        .write_with_w_flag(instruction.disp as u16, instruction)
         .end_line();
 }
 

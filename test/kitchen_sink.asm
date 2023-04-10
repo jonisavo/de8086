@@ -23,10 +23,27 @@ mov bx, [bp + 1h]
 mov bx, [bx + 5h]
 mov [bp + di + 6f69h], di
 mov bp, [bp + si + 2h]
+mov bx, [5b77h]
+mov ax, [bx + di - 37h]
+mov [si - 300h], cx
+mov dx, [bx - 32h]
+mov bp, [5]
+
+; Immediate to register / memory
+
+mov [bp + di], byte 7
+mov [di + 901], word 347
 
 ; Immediate to register
-mov bx, [5b77h]
 mov ax, 0x4f02
 mov bx, 0x01
 mov cl, 0x85
 mov dl, 0x05
+
+; Memory-to-accumulator
+mov ax, [2555]
+mov ax, [16]
+
+; Accumulator-to-memory
+mov [2554], ax
+mov [15], ax

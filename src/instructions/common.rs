@@ -50,10 +50,10 @@ fn test_get_displacement_amount() {
     assert_eq!(get_displacement_amount(0b11000000), 0);
 }
 
-pub fn get_disp_value(bytes: &[u8], displacement: u8, offset: usize) -> u16 {
+pub fn get_disp_value(bytes: &[u8], displacement: u8, offset: usize) -> i16 {
     match displacement {
-        1 => bytes[offset] as u16,
-        2 => ((bytes[offset + 1] as u16) << 8) | bytes[offset] as u16,
+        1 => bytes[offset] as i8 as i16,
+        2 => ((bytes[offset + 1] as i16) << 8) | bytes[offset] as i16,
         _ => 0,
     }
 }

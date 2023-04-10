@@ -12,7 +12,7 @@ use super::{
 pub struct Instruction {
     pub length: u8,
     pub data: InstructionData,
-    pub disp: u16,
+    pub disp: i16,
     pub additional_data: u16,
     pub fields: InstructionFields,
     pub register: Register,
@@ -60,7 +60,7 @@ impl Instruction {
 
     fn effective_to_string(&self, eff: Effective, mode: Mode) -> String {
         if eff == Effective::DirectAddress && mode == Mode::MemoryMode {
-            format!("[{:x}h", self.disp)
+            format!("[{}", self.disp)
         } else {
             EFFECTIVE_ADDRESS_STRINGS[eff as usize].to_string()
         }
@@ -83,7 +83,7 @@ impl Instruction {
                 let is_direct_address = eff == Effective::DirectAddress && mode == Mode::MemoryMode;
 
                 if !is_direct_address && self.disp != 0 {
-                    string.push_str(&format!("+{:x}h", self.disp));
+                    string.push_str(&format!("{:+}", self.disp));
                 }
 
                 string.push_str("]");

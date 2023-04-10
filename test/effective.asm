@@ -11,4 +11,7 @@ mov bx, [bp + 1h]
 mov bx, [bx + 5h]
 mov [bp + di + 6f69h], di
 mov bp, [bp + si + 2h]
+mov ax, [bx + di - 37h]
+mov [si - 18205], cx
+mov dx, [bx - 32]
 mov bx, [5b77h]
