@@ -51,6 +51,12 @@ pub mod descriptions {
             parse_fn: parse_mov_immediate_to_register,
             write_fn: write_mov_immediate_to_register,
         };
+        pub const MEMORY_TO_ACCUMULATOR: Description = Description {
+            constants_mask: 0b11111100,
+            constants: 0b10100000,
+            parse_fn: parse_mov_memory_to_accumulator,
+            write_fn: write_mov_to_register,
+        };
     }
 }
 
@@ -60,4 +66,5 @@ pub const DESCRIPTIONS: &[&'static Description] = &[
     &mov::TO_REGISTER,
     &mov::IMMEDIATE_TO_MEMORY,
     &mov::IMMEDIATE_TO_REGISTER,
+    &mov::MEMORY_TO_ACCUMULATOR,
 ];

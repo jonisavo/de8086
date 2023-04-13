@@ -43,8 +43,8 @@ mov dl, 0x05
 
 ; Memory-to-accumulator
 mov ax, [2555]
-mov ax, [16]
+mov al, [16]
 
 ; Accumulator-to-memory
 mov [2554], ax
-mov [15], ax
+mov [15], al

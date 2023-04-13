@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use de8086::instructions::mov::{parse_mov_immediate_to_register, parse_mov_to_register};
+use de8086::instructions::mov::{parse_mov_immediate_to_register, parse_mov_memory_to_accumulator, parse_mov_to_register};
 use de8086::parser::Parser;
 use de8086::writer::Writer;
 
@@ -27,6 +27,10 @@ fn benchmark_parse_mov(c: &mut Criterion) {
     group.bench_function("immediate to register", |b| {
         const BYTES: [u8; 3] = [0b10111100, 0x12, 0x34];
         b.iter(|| parse_mov_immediate_to_register(black_box(&BYTES)))
+    });
+    group.bench_function("memory to accumulator", |b| {
+        const BYTES: [u8; 3] = [0b10100001, 0x12, 0x34];
+        b.iter(|| parse_mov_memory_to_accumulator(black_box(&BYTES)))
     });
 }
 

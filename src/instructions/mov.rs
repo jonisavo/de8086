@@ -1,4 +1,6 @@
 use crate::{writer::Writer, instructions::common::get_data_value};
+use crate::instructions::common::Register;
+use crate::instructions::descriptions::mov::MEMORY_TO_ACCUMULATOR;
 
 use super::{
     common::{
@@ -79,5 +81,21 @@ pub fn parse_mov_immediate_to_register(bytes: &[u8]) -> Instruction {
         disp: 0,
         data,
         description: &IMMEDIATE_TO_REGISTER,
+    }
+}
+
+pub fn parse_mov_memory_to_accumulator(bytes: &[u8]) -> Instruction {
+    let mut fields = parse_instruction_fields(bytes[0]);
+    fields.direction = !fields.direction;
+    let disp = get_disp_value(bytes, 2, 1);
+
+    Instruction {
+        length: 3,
+        fields,
+        register: Register::AX,
+        data_fields: InstructionDataFields::DIRECT_ADDRESS,
+        disp,
+        data: 0,
+        description: &MEMORY_TO_ACCUMULATOR
     }
 }

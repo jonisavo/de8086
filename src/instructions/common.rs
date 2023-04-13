@@ -218,6 +218,10 @@ impl InstructionDataFields {
         mode: Mode::RegisterMode,
         rm: RM::Reg(Register::AX),
     };
+    pub const DIRECT_ADDRESS: InstructionDataFields = InstructionDataFields {
+        mode: Mode::MemoryMode,
+        rm: RM::Eff(Effective::DirectAddress),
+    };
 
     pub fn parse(byte: u8) -> InstructionDataFields {
         let mode = get_mode(byte);
