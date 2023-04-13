@@ -32,6 +32,7 @@ mov bp, [5]
 ; Immediate to register / memory
 
 mov [bp + di], byte 7
+mov [bx + si - 1025], byte 1
 mov [di + 901], word 347
 
 ; Immediate to register

@@ -58,6 +58,14 @@ pub fn get_disp_value(bytes: &[u8], displacement: u8, offset: usize) -> i16 {
     }
 }
 
+pub fn get_data_value(bytes: &[u8], word: bool, offset: usize) -> u16 {
+    if word {
+        ((bytes[offset + 1] as u16) << 8) | bytes[offset] as u16
+    } else {
+        bytes[offset] as u16
+    }
+}
+
 #[test]
 fn test_get_disp_value() {
     let bytes = [0x01, 0x02, 0x03];
@@ -205,34 +213,27 @@ pub struct InstructionDataFields {
     pub rm: RM,
 }
 
-#[derive(Debug)]
-pub enum InstructionData {
-    Fields(InstructionDataFields),
-    Data(u8),
-}
+impl InstructionDataFields {
+    pub const EMPTY: InstructionDataFields = InstructionDataFields {
+        mode: Mode::RegisterMode,
+        rm: RM::Reg(Register::AX),
+    };
 
-impl InstructionData {
-    pub fn parse_fields(byte: u8) -> InstructionData {
+    pub fn parse(byte: u8) -> InstructionDataFields {
         let mode = get_mode(byte);
         let rm = get_rm(byte, mode);
 
-        InstructionData::Fields(InstructionDataFields { mode, rm })
+        InstructionDataFields { mode, rm }
     }
 }
 
 #[test]
 fn test_instruction_data_fields_parse() {
-    let fields = match InstructionData::parse_fields(0b11000001) {
-        InstructionData::Fields(fields) => fields,
-        _ => unreachable!(),
-    };
+    let fields = InstructionDataFields::parse(0b11000001);
     assert_eq!(fields.mode, Mode::RegisterMode);
     assert_eq!(fields.rm, RM::Reg(Register::CX));
 
-    let fields = match InstructionData::parse_fields(0b00000100) {
-        InstructionData::Fields(fields) => fields,
-        _ => unreachable!(),
-    };
+    let fields = InstructionDataFields::parse(0b00000100);
     assert_eq!(fields.mode, Mode::MemoryMode);
     assert_eq!(fields.rm, RM::Eff(Effective::SI));
 }

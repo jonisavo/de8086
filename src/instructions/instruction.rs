@@ -2,8 +2,8 @@ use crate::writer::Writer;
 
 use super::{
     common::{
-        Effective, InstructionData, InstructionFields, Mode, Register, BYTE_REGISTER_STRINGS,
-        EFFECTIVE_ADDRESS_STRINGS, RM, WORD_REGISTER_STRINGS,
+        Effective, InstructionFields, Mode, Register, BYTE_REGISTER_STRINGS,
+        EFFECTIVE_ADDRESS_STRINGS, RM, WORD_REGISTER_STRINGS, InstructionDataFields,
     },
     description::Description,
 };
@@ -11,9 +11,9 @@ use super::{
 #[derive(Debug)]
 pub struct Instruction {
     pub length: u8,
-    pub data: InstructionData,
+    pub data_fields: InstructionDataFields,
     pub disp: i16,
-    pub additional_data: u16,
+    pub data: u16,
     pub fields: InstructionFields,
     pub register: Register,
     pub description: &'static Description,
@@ -26,12 +26,7 @@ impl Instruction {
 
     fn get_source(&self) -> RM {
         if self.fields.direction {
-            match &self.data {
-                InstructionData::Fields(fields) => fields.rm,
-                InstructionData::Data(_) => {
-                    unreachable!("Can not get source string from data")
-                }
-            }
+            self.data_fields.rm
         } else {
             RM::Reg(self.register)
         }
@@ -41,12 +36,7 @@ impl Instruction {
         if self.fields.direction {
             RM::Reg(self.register)
         } else {
-            match &self.data {
-                InstructionData::Fields(fields) => fields.rm,
-                InstructionData::Data(_) => {
-                    unreachable!("Can not get destination string from data")
-                }
-            }
+            self.data_fields.rm
         }
     }
 
@@ -66,19 +56,15 @@ impl Instruction {
         }
     }
 
-    fn address_to_string(&self, address: RM) -> String {
+    pub fn address_to_string(&self, address: RM) -> String {
         let mut string = String::new();
-        let mut mode = Mode::RegisterMode;
-
-        if let InstructionData::Fields(fields) = &self.data {
-            mode = fields.mode;
-        }
 
         match address {
             RM::Reg(reg) => {
                 string.push_str(self.register_to_str(reg));
             }
             RM::Eff(eff) => {
+                let mode = self.data_fields.mode;
                 string.push_str(&self.effective_to_string(eff, mode));
                 let is_direct_address = eff == Effective::DirectAddress && mode == Mode::MemoryMode;
 

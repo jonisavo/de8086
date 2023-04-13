@@ -39,6 +39,16 @@ impl Writer {
         }
     }
 
+    pub fn write_with_size_specifier(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
+        let writer = if instruction.fields.word {
+            self.write(b"word ")
+        } else {
+            self.write(b"byte ")
+        };
+
+        writer.write_with_w_flag(value, instruction)
+    }
+
     pub fn end_line(&mut self) -> &mut Self {
         self.buffer.push(b'\n');
 

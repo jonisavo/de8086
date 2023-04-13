@@ -1,7 +1,5 @@
 use std::fmt::Debug;
-
 use crate::writer::Writer;
-
 use super::instruction::Instruction;
 
 pub struct Description {
@@ -32,10 +30,7 @@ impl Debug for Description {
 
 pub mod descriptions {
     pub mod mov {
-        use crate::instructions::mov::{
-            parse_mov_immediate_to_register, parse_mov_to_register,
-            write_mov_immediate_to_register, write_mov_to_register,
-        };
+        use crate::instructions::mov::*;
 
         use super::super::Description;
         pub const TO_REGISTER: Description = Description {
@@ -43,6 +38,12 @@ pub mod descriptions {
             constants: 0b10001000,
             parse_fn: parse_mov_to_register,
             write_fn: write_mov_to_register,
+        };
+        pub const IMMEDIATE_TO_MEMORY: Description = Description {
+            constants_mask: 0b11111110,
+            constants: 0b11000110,
+            parse_fn: parse_mov_immediate_to_memory,
+            write_fn: write_mov_immediate_to_memory,
         };
         pub const IMMEDIATE_TO_REGISTER: Description = Description {
             constants_mask: 0b11110000,
@@ -55,4 +56,8 @@ pub mod descriptions {
 
 use descriptions::*;
 
-pub const DESCRIPTIONS: &[&'static Description] = &[&mov::TO_REGISTER, &mov::IMMEDIATE_TO_REGISTER];
+pub const DESCRIPTIONS: &[&'static Description] = &[
+    &mov::TO_REGISTER,
+    &mov::IMMEDIATE_TO_MEMORY,
+    &mov::IMMEDIATE_TO_REGISTER,
+];
