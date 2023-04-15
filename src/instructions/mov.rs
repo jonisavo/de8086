@@ -1,63 +1,32 @@
-use crate::{writer::Writer, instructions::common::get_data_value};
-use crate::instructions::common::Register;
-use crate::instructions::descriptions::mov::MEMORY_TO_ACCUMULATOR;
+use crate::writer::Writer;
 
 use super::{
     common::{
-        get_disp_value, get_displacement_amount, get_register, parse_instruction_fields, InstructionDataFields
+        get_data_value, get_disp_value, get_displacement_amount, get_register,
+        parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
+        InstructionDataFields, InstructionFields, Register,
     },
-    description::descriptions::mov::{IMMEDIATE_TO_REGISTER, TO_REGISTER},
-    instruction::Instruction, descriptions::mov::IMMEDIATE_TO_MEMORY,
+    instruction::Instruction,
+    Description,
 };
-
-pub fn write_mov_to_register(writer: &mut Writer, instruction: &Instruction) {
-    writer
-        .write(b"mov ")
-        .write_string(&instruction.destination_string())
-        .write_comma_separator()
-        .write_string(&instruction.source_string())
-        .end_line();
-}
 
 pub fn write_mov_immediate_to_memory(writer: &mut Writer, instruction: &Instruction) {
     writer
-        .write(b"mov ")
-        .write_string(&instruction.address_to_string(instruction.data_fields.rm))
+        .start_instruction(instruction)
+        .write_str(&instruction.address_to_string(instruction.data_fields.rm))
         .write_comma_separator()
-        .write_with_size_specifier(instruction.data, instruction)
+        .write_with_size(instruction.data, instruction)
         .end_line();
-}
-
-pub fn write_mov_immediate_to_register(writer: &mut Writer, instruction: &Instruction) {
-    writer
-        .write(b"mov ")
-        .write_string(&instruction.destination_string())
-        .write_comma_separator()
-        .write_with_w_flag(instruction.data, instruction)
-        .end_line();
-}
-
-pub fn parse_mov_to_register(bytes: &[u8]) -> Instruction {
-    let displacement = get_displacement_amount(bytes[1]);
-
-    Instruction {
-        length: 2 + displacement,
-        fields: parse_instruction_fields(bytes[0]),
-        register: get_register(bytes[1] >> 3),
-        data_fields: InstructionDataFields::parse(bytes[1]),
-        disp: get_disp_value(&bytes, displacement, 2),
-        data: 0,
-        description: &TO_REGISTER,
-    }
 }
 
 pub fn parse_mov_immediate_to_memory(bytes: &[u8]) -> Instruction {
-    let fields = parse_instruction_fields(bytes[0]);
+    let fields = InstructionFields::parse(bytes[0]);
     let displacement = get_displacement_amount(bytes[1]);
     let immediate_length = fields.word as u8 + 1;
     let data = get_data_value(bytes, fields.word, 2 + displacement as usize);
 
     Instruction {
+        mnemonic: "mov",
         length: 2 + displacement + immediate_length,
         fields,
         register: get_register(bytes[1] >> 3),
@@ -69,11 +38,12 @@ pub fn parse_mov_immediate_to_memory(bytes: &[u8]) -> Instruction {
 }
 
 pub fn parse_mov_immediate_to_register(bytes: &[u8]) -> Instruction {
-    let fields = parse_instruction_fields(bytes[0] >> 3);
+    let fields = InstructionFields::parse(bytes[0] >> 3);
     let length = fields.word as u8 + 2;
     let data = get_data_value(bytes, fields.word, 1);
 
     Instruction {
+        mnemonic: "mov",
         length,
         fields,
         register: get_register(bytes[0]),
@@ -85,17 +55,35 @@ pub fn parse_mov_immediate_to_register(bytes: &[u8]) -> Instruction {
 }
 
 pub fn parse_mov_memory_to_accumulator(bytes: &[u8]) -> Instruction {
-    let mut fields = parse_instruction_fields(bytes[0]);
+    let mut fields = InstructionFields::parse(bytes[0]);
     fields.direction = !fields.direction;
     let disp = get_disp_value(bytes, 2, 1);
 
     Instruction {
+        mnemonic: "mov",
         length: 3,
         fields,
         register: Register::AX,
         data_fields: InstructionDataFields::DIRECT_ADDRESS,
         disp,
         data: 0,
-        description: &MEMORY_TO_ACCUMULATOR
+        description: &MEMORY_TO_ACCUMULATOR,
     }
 }
+
+pub const TO_REGISTER: Description = Description {
+    parse_fn: |b| parse_typical_instruction("mov", b, &TO_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const IMMEDIATE_TO_MEMORY: Description = Description {
+    parse_fn: parse_mov_immediate_to_memory,
+    write_fn: write_mov_immediate_to_memory,
+};
+pub const IMMEDIATE_TO_REGISTER: Description = Description {
+    parse_fn: parse_mov_immediate_to_register,
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
+pub const MEMORY_TO_ACCUMULATOR: Description = Description {
+    parse_fn: parse_mov_memory_to_accumulator,
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};

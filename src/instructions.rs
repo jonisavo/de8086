@@ -1,5 +1,7 @@
 pub mod common;
-mod description;
-pub use description::{descriptions, Description, DESCRIPTIONS};
+mod descriptions;
+pub use descriptions::{get_description, Description};
+pub mod arithmetic;
 pub mod instruction;
+pub mod jumps;
 pub mod mov;

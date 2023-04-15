@@ -2,14 +2,16 @@ use crate::writer::Writer;
 
 use super::{
     common::{
-        Effective, InstructionFields, Mode, Register, BYTE_REGISTER_STRINGS,
-        EFFECTIVE_ADDRESS_STRINGS, RM, WORD_REGISTER_STRINGS, InstructionDataFields,
+        Effective, InstructionDataFields, InstructionFields, Mode, Register, BYTE_REGISTER_STRINGS,
+        EFFECTIVE_ADDRESS_STRINGS, RM, WORD_REGISTER_STRINGS,
     },
-    description::Description,
+    descriptions::Description,
+    get_description,
 };
 
 #[derive(Debug)]
 pub struct Instruction {
+    pub mnemonic: &'static str,
     pub length: u8,
     pub data_fields: InstructionDataFields,
     pub disp: i16,
@@ -20,6 +22,21 @@ pub struct Instruction {
 }
 
 impl Instruction {
+    pub fn parse(bytes: &[u8]) -> Option<Self> {
+        if bytes.len() == 0 {
+            return None;
+        }
+
+        let description = get_description(bytes[0]);
+        let parsed = description.parse(bytes);
+
+        if parsed.length != 0 {
+            Some(parsed)
+        } else {
+            None
+        }
+    }
+
     pub fn write(&self, writer: &mut Writer) {
         (self.description.write_fn)(writer, self);
     }

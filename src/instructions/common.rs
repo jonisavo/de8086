@@ -1,3 +1,7 @@
+use crate::{writer::Writer, Instruction};
+
+use super::Description;
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Mode {
@@ -146,7 +150,7 @@ const EFFECTIVE_DIRECT_ADDRESS: RM = RM::Eff(Effective::DirectAddress);
 /// Fetches the R/M value from the given byte's 3 least significant bits.
 pub fn get_rm(byte: u8, mode: Mode) -> RM {
     if mode == Mode::RegisterMode {
-        get_rm_register(byte)
+        RM::Reg(get_register(byte))
     } else {
         get_rm_effective_address(byte)
     }
@@ -183,10 +187,6 @@ fn get_rm_effective_address(byte: u8) -> RM {
     }
 }
 
-fn get_rm_register(instruction: u8) -> RM {
-    RM::Reg(get_register(instruction))
-}
-
 pub const WORD_REGISTER_STRINGS: [&str; 8] = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di"];
 
 pub const BYTE_REGISTER_STRINGS: [&str; 8] = ["al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"];
@@ -205,6 +205,46 @@ pub struct InstructionFields {
     /// If false, repeat/loop while zero flag is cleared, otherwise repeat/loop
     /// while zero flag is set
     pub zero: bool,
+}
+
+impl InstructionFields {
+    pub const EMPTY: InstructionFields = InstructionFields {
+        word: false,
+        sign: false,
+        direction: false,
+        shift_rotate: false,
+        zero: false,
+    };
+
+    pub const fn parse(byte: u8) -> InstructionFields {
+        let first_flag = byte & 0b1 == 0b1;
+        let second_flag = (byte >> 1) & 0b1 == 0b1;
+
+        InstructionFields {
+            word: first_flag,
+            sign: second_flag,
+            direction: second_flag,
+            shift_rotate: second_flag,
+            zero: first_flag,
+        }
+    }
+}
+
+#[test]
+fn test_parse_instruction_fields() {
+    let fields = InstructionFields::parse(0b00000001);
+    assert_eq!(fields.word, true);
+    assert_eq!(fields.sign, false);
+    assert_eq!(fields.direction, false);
+    assert_eq!(fields.shift_rotate, false);
+    assert_eq!(fields.zero, true);
+
+    let fields = InstructionFields::parse(0b00000010);
+    assert_eq!(fields.word, false);
+    assert_eq!(fields.sign, true);
+    assert_eq!(fields.direction, true);
+    assert_eq!(fields.shift_rotate, true);
+    assert_eq!(fields.zero, false);
 }
 
 #[derive(Debug)]
@@ -242,32 +282,50 @@ fn test_instruction_data_fields_parse() {
     assert_eq!(fields.rm, RM::Eff(Effective::SI));
 }
 
-pub fn parse_instruction_fields(byte: u8) -> InstructionFields {
-    let first_flag = byte & 0b1 == 0b1;
-    let second_flag = (byte >> 1) & 0b1 == 0b1;
+pub fn write_typical_instruction(writer: &mut Writer, instruction: &Instruction) {
+    writer
+        .start_instruction(instruction)
+        .write_str(&instruction.destination_string())
+        .write_comma_separator()
+        .write_str(&instruction.source_string())
+        .end_line();
+}
 
-    InstructionFields {
-        word: first_flag,
-        sign: second_flag,
-        direction: second_flag,
-        shift_rotate: second_flag,
-        zero: first_flag,
+pub fn parse_typical_instruction(
+    mnemonic: &'static str,
+    bytes: &[u8],
+    description: &'static Description,
+) -> Instruction {
+    let displacement = get_displacement_amount(bytes[1]);
+
+    Instruction {
+        mnemonic,
+        length: 2 + displacement,
+        fields: InstructionFields::parse(bytes[0]),
+        register: get_register(bytes[1] >> 3),
+        data_fields: InstructionDataFields::parse(bytes[1]),
+        disp: get_disp_value(&bytes, displacement, 2),
+        data: 0,
+        description,
     }
 }
 
-#[test]
-fn test_parse_instruction_fields() {
-    let fields = parse_instruction_fields(0b00000001);
-    assert_eq!(fields.word, true);
-    assert_eq!(fields.sign, false);
-    assert_eq!(fields.direction, false);
-    assert_eq!(fields.shift_rotate, false);
-    assert_eq!(fields.zero, true);
+pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instruction) {
+    writer
+        .start_instruction(instruction)
+        .write_str(&instruction.destination_string())
+        .write_comma_separator();
 
-    let fields = parse_instruction_fields(0b00000010);
-    assert_eq!(fields.word, false);
-    assert_eq!(fields.sign, true);
-    assert_eq!(fields.direction, true);
-    assert_eq!(fields.shift_rotate, true);
-    assert_eq!(fields.zero, false);
+    if instruction.mnemonic == "mov" {
+        writer.write_with_w_flag(instruction.data, instruction);
+    } else {
+        let signed_data = if instruction.fields.word {
+            instruction.data as i16
+        } else {
+            instruction.data as i8 as i16
+        };
+        writer.write_str(&signed_data.to_string());
+    }
+
+    writer.end_line();
 }

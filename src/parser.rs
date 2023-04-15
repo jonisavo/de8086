@@ -1,8 +1,6 @@
+use crate::instructions::instruction::Instruction;
 use std::error::Error;
 use std::fmt;
-
-use crate::instructions::instruction::Instruction;
-use crate::DESCRIPTIONS;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Parser<'a> {
@@ -45,19 +43,12 @@ impl Iterator for Parser<'_> {
             return None;
         }
 
-        let first_byte = self.bytes[self.current_index];
         let remaining_bytes_slice = &self.bytes[self.current_index..];
 
-        for description in DESCRIPTIONS {
-            if description.matches(first_byte) {
-                let parsed = description.parse(remaining_bytes_slice);
+        let parsed = Instruction::parse(remaining_bytes_slice)?;
 
-                self.current_index += parsed.length as usize;
+        self.current_index += parsed.length as usize;
 
-                return Some(parsed);
-            }
-        }
-
-        None
+        Some(parsed)
     }
 }

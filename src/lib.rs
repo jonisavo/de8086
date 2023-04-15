@@ -1,6 +1,5 @@
 pub mod instructions;
 pub use crate::instructions::instruction::Instruction;
-pub use crate::instructions::DESCRIPTIONS;
 pub mod parser;
 pub mod writer;
 
