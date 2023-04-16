@@ -48,6 +48,14 @@ mov al, [16]
 mov [2554], ax
 mov [15], al
 
+; Register/memory to segment register
+mov cs, ax
+mov es, [1234]
+
+; Segment register to register/memory
+mov [1234], ss
+mov ax, ds
+
 ; Push and pop
 push word [bp + si]
 push word [3000]
@@ -55,7 +63,7 @@ push word [bx + di - 30]
 push cx
 push ax
 push dx
-push es
+push cs
 
 pop word [bp + si]
 pop word [3]

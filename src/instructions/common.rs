@@ -125,8 +125,8 @@ fn test_get_register() {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SegmentRegister {
     ES = 0b00,
-    SS = 0b01,
-    CS = 0b10,
+    CS = 0b01,
+    SS = 0b10,
     DS = 0b11,
 }
 
@@ -134,14 +134,14 @@ pub enum SegmentRegister {
 pub fn get_segment_register(value: u8) -> InstRegister {
     match value & 0b11 {
         0b00 => InstRegister::SegReg(SegmentRegister::ES),
-        0b01 => InstRegister::SegReg(SegmentRegister::SS),
-        0b10 => InstRegister::SegReg(SegmentRegister::CS),
+        0b01 => InstRegister::SegReg(SegmentRegister::CS),
+        0b10 => InstRegister::SegReg(SegmentRegister::SS),
         0b11 => InstRegister::SegReg(SegmentRegister::DS),
         _ => unreachable!(),
     }
 }
 
-pub const SEGMENT_REGISTER_STRINGS: [&str; 4] = ["es", "ss", "cs", "ds"];
+pub const SEGMENT_REGISTER_STRINGS: [&str; 4] = ["es", "cs", "ss", "ds"];
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq)]

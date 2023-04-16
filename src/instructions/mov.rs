@@ -3,8 +3,9 @@ use crate::writer::Writer;
 use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
-        InstRegister, InstructionDataFields, InstructionFields, Register,
+        get_segment_register, parse_typical_instruction, write_immediate_instruction,
+        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields,
+        Register,
     },
     instruction::Instruction,
     Description,
@@ -71,6 +72,15 @@ pub fn parse_mov_memory_to_accumulator(bytes: &[u8]) -> Instruction {
     }
 }
 
+pub fn parse_mov_to_segment_register(bytes: &[u8]) -> Instruction {
+    let mut instruction = parse_typical_instruction("mov", bytes, &TO_SEGMENT_REGISTER);
+
+    instruction.register = get_segment_register(bytes[1] >> 3);
+    instruction.fields.word = true;
+
+    instruction
+}
+
 pub const TO_REGISTER: Description = Description {
     parse_fn: |b| parse_typical_instruction("mov", b, &TO_REGISTER),
     write_fn: |writer, inst| write_typical_instruction(writer, inst),
@@ -85,5 +95,9 @@ pub const IMMEDIATE_TO_REGISTER: Description = Description {
 };
 pub const MEMORY_TO_ACCUMULATOR: Description = Description {
     parse_fn: parse_mov_memory_to_accumulator,
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const TO_SEGMENT_REGISTER: Description = Description {
+    parse_fn: parse_mov_to_segment_register,
     write_fn: |writer, inst| write_typical_instruction(writer, inst),
 };

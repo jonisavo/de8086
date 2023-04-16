@@ -54,6 +54,7 @@ pub fn get_description(byte: u8) -> &'static Description {
         0b11000110 | 0b11000111 => &mov::IMMEDIATE_TO_MEMORY,
         0b10110000..=0b10111111 => &mov::IMMEDIATE_TO_REGISTER,
         0b10100000..=0b10100011 => &mov::MEMORY_TO_ACCUMULATOR,
+        0b10001100 | 0b10001110 => &mov::TO_SEGMENT_REGISTER,
         0b11111111 => &push_pop::PUSH_POP_REGISTER_OR_MEMORY,
         0b01010000..=0b01010111 => &push_pop::PUSH_REGISTER,
         0b00000110 | 0b00001110 | 0b00010110 | 0b00011110 => &push_pop::PUSH_SEGMENT_REGISTER,
