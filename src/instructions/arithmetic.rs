@@ -2,7 +2,7 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        get_data_value, get_disp_value, get_displacement_amount, get_register,
+        get_data_value, get_disp_value, get_displacement_amount, get_register, InstRegister,
         InstructionDataFields, InstructionFields, Register,
     },
     Description,
@@ -18,7 +18,8 @@ pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8]) -> Instruction {
         2 + displacement as usize,
     );
     let register = get_register(bytes[1] >> 3);
-    let mnemonic = ARITHMETIC_MNEMONICS[register as usize];
+    let register_number = <InstRegister as Into<Register>>::into(register) as usize;
+    let mnemonic = ARITHMETIC_MNEMONICS[register_number];
 
     Instruction {
         mnemonic,
@@ -56,7 +57,7 @@ pub fn parse_immediate_to_accumulator(
         mnemonic,
         length,
         fields,
-        register: Register::AX,
+        register: InstRegister::Reg(Register::AX),
         data_fields: InstructionDataFields::EMPTY,
         disp: 0,
         data,

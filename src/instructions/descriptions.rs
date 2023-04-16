@@ -1,8 +1,8 @@
 use super::{
     arithmetic::{self, add, cmp, sub},
-    common::{InstructionDataFields, InstructionFields, Register},
+    common::{InstRegister, InstructionDataFields, InstructionFields, Register},
     instruction::Instruction,
-    jumps, mov,
+    jumps, mov, push_pop,
 };
 use crate::writer::Writer;
 use std::fmt::Debug;
@@ -31,7 +31,7 @@ fn unimplemented_parse(_bytes: &[u8]) -> Instruction {
         mnemonic: "unimplemented",
         length: 0,
         fields: EMPTY_FIELDS,
-        register: Register::AX,
+        register: InstRegister::Reg(Register::AX),
         data_fields: InstructionDataFields::EMPTY,
         disp: 0,
         data: 0,
@@ -54,6 +54,12 @@ pub fn get_description(byte: u8) -> &'static Description {
         0b11000110 | 0b11000111 => &mov::IMMEDIATE_TO_MEMORY,
         0b10110000..=0b10111111 => &mov::IMMEDIATE_TO_REGISTER,
         0b10100000..=0b10100011 => &mov::MEMORY_TO_ACCUMULATOR,
+        0b11111111 => &push_pop::PUSH_POP_REGISTER_OR_MEMORY,
+        0b01010000..=0b01010111 => &push_pop::PUSH_REGISTER,
+        0b00000110 | 0b00001110 | 0b00010110 | 0b00011110 => &push_pop::PUSH_SEGMENT_REGISTER,
+        0b10001111 => &push_pop::PUSH_POP_REGISTER_OR_MEMORY,
+        0b01011000..=0b01011111 => &push_pop::POP_REGISTER,
+        0b00000111 | 0b00001111 | 0b00010111 | 0b00011111 => &push_pop::POP_SEGMENT_REGISTER,
         0b00000000..=0b00000011 => &add::TO_REGISTER,
         0b10000000..=0b10000011 => &arithmetic::IMMEDIATE_TO_REGISTER_MEMORY,
         0b00000100 | 0b00000101 => &add::IMMEDIATE_TO_ACCUMULATOR,

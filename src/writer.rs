@@ -184,11 +184,11 @@ impl Writer {
     }
 
     pub fn end_line(&mut self) -> &mut Self {
-        self.file_buffer.push(b'\n');
-
         if let Some(current_instruction) = self.current_instruction.take() {
             self.current_instruction_byte_index += current_instruction.length as usize;
         }
+
+        self.file_buffer.push(b'\n');
 
         self
     }

@@ -30,7 +30,6 @@ mov dx, [bx - 32h]
 mov bp, [5]
 
 ; Immediate to register / memory
-
 mov [bp + di], byte 7
 mov [bx + si - 1025], byte 1
 mov [di + 901], word 347
@@ -49,8 +48,24 @@ mov al, [16]
 mov [2554], ax
 mov [15], al
 
-; Add
+; Push and pop
+push word [bp + si]
+push word [3000]
+push word [bx + di - 30]
+push cx
+push ax
+push dx
+push es
 
+pop word [bp + si]
+pop word [3]
+pop word [bx + di - 3000]
+pop sp
+pop di
+pop si
+pop ds
+
+; Add
 add bx, [bx+si]
 add bx, [bp]
 add si, 2
@@ -77,7 +92,6 @@ add al, -30
 add al, 9
 
 ; Sub
-
 sub bx, [bx+si]
 sub bx, [bp]
 sub si, 2
@@ -104,7 +118,6 @@ sub al, -30
 sub al, 9
 
 ; Cmp
-
 cmp bx, [bx+si]
 cmp bx, [bp]
 cmp si, 2
@@ -131,7 +144,6 @@ cmp al, -30
 cmp al, 9
 
 ; Conditional jumps
-
 test_label0:
 jnz test_label1
 jnz test_label0

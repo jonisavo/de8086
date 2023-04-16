@@ -4,10 +4,10 @@ use de8086::parser::Parser;
 use de8086::writer::Writer;
 
 const KITCHEN_SINK_BYTES: &[u8] = include_bytes!("../test/kitchen_sink");
-const BIG_FILE_BYTES: &[u8] = include_bytes!("../test/big_file");
+const MOV_FILE_BYTES: &[u8] = include_bytes!("../test/mov_file");
 
 fn benchmark_parse_mov(c: &mut Criterion) {
-    let mut group = c.benchmark_group("mov memory/reg to/from register");
+    let mut group = c.benchmark_group("mov");
     group.bench_function("reg to reg", |b| {
         const BYTES: [u8; 2] = [0b10001001, 0b11011100];
         b.iter(|| TO_REGISTER.parse(black_box(&BYTES)))
@@ -36,8 +36,8 @@ fn benchmark_file(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("parse big file (1000 elements)", |b| {
-        let parser = Parser::build(black_box(BIG_FILE_BYTES)).unwrap();
+    c.bench_function("parse mov file (1000 elements)", |b| {
+        let parser = Parser::build(black_box(MOV_FILE_BYTES)).unwrap();
         b.iter(move || {
             for instruction in parser {
                 black_box(instruction);
@@ -58,8 +58,8 @@ fn benchmark_write(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("write big file (1000 elements)", |b| {
-        let parser = Parser::build(black_box(BIG_FILE_BYTES)).unwrap();
+    c.bench_function("write mov file (1000 elements)", |b| {
+        let parser = Parser::build(black_box(MOV_FILE_BYTES)).unwrap();
         let mut writer = Writer::new();
         let instructions = &parser.collect::<Vec<_>>();
         b.iter(move || {

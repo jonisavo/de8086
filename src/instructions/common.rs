@@ -95,30 +95,77 @@ pub enum Register {
 }
 
 /// Fetches the register from the given byte's 3 least significant bits.
-pub fn get_register(value: u8) -> Register {
+pub fn get_register(value: u8) -> InstRegister {
     match value & 0b111 {
-        0b000 => Register::AX,
-        0b001 => Register::CX,
-        0b010 => Register::DX,
-        0b011 => Register::BX,
-        0b100 => Register::SP,
-        0b101 => Register::BP,
-        0b110 => Register::SI,
-        0b111 => Register::DI,
+        0b000 => InstRegister::Reg(Register::AX),
+        0b001 => InstRegister::Reg(Register::CX),
+        0b010 => InstRegister::Reg(Register::DX),
+        0b011 => InstRegister::Reg(Register::BX),
+        0b100 => InstRegister::Reg(Register::SP),
+        0b101 => InstRegister::Reg(Register::BP),
+        0b110 => InstRegister::Reg(Register::SI),
+        0b111 => InstRegister::Reg(Register::DI),
         _ => unreachable!(),
     }
 }
 
 #[test]
 fn test_get_register() {
-    assert_eq!(get_register(0b000), Register::AX);
-    assert_eq!(get_register(0b1001), Register::CX);
-    assert_eq!(get_register(0b10010), Register::DX);
-    assert_eq!(get_register(0b011), Register::BX);
-    assert_eq!(get_register(0b100), Register::SP);
-    assert_eq!(get_register(0b101), Register::BP);
-    assert_eq!(get_register(0b11111110), Register::SI);
-    assert_eq!(get_register(0b111), Register::DI);
+    assert_eq!(get_register(0b000), InstRegister::Reg(Register::AX));
+    assert_eq!(get_register(0b1001), InstRegister::Reg(Register::CX));
+    assert_eq!(get_register(0b10010), InstRegister::Reg(Register::DX));
+    assert_eq!(get_register(0b011), InstRegister::Reg(Register::BX));
+    assert_eq!(get_register(0b100), InstRegister::Reg(Register::SP));
+    assert_eq!(get_register(0b101), InstRegister::Reg(Register::BP));
+    assert_eq!(get_register(0b11111110), InstRegister::Reg(Register::SI));
+    assert_eq!(get_register(0b111), InstRegister::Reg(Register::DI));
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum SegmentRegister {
+    ES = 0b00,
+    SS = 0b01,
+    CS = 0b10,
+    DS = 0b11,
+}
+
+/// Fetches the register from the given byte's 2 least significant bits.
+pub fn get_segment_register(value: u8) -> InstRegister {
+    match value & 0b11 {
+        0b00 => InstRegister::SegReg(SegmentRegister::ES),
+        0b01 => InstRegister::SegReg(SegmentRegister::SS),
+        0b10 => InstRegister::SegReg(SegmentRegister::CS),
+        0b11 => InstRegister::SegReg(SegmentRegister::DS),
+        _ => unreachable!(),
+    }
+}
+
+pub const SEGMENT_REGISTER_STRINGS: [&str; 4] = ["es", "ss", "cs", "ds"];
+
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum InstRegister {
+    Reg(Register),
+    SegReg(SegmentRegister),
+}
+
+impl Into<Register> for InstRegister {
+    fn into(self) -> Register {
+        match self {
+            InstRegister::Reg(reg) => reg,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Into<SegmentRegister> for InstRegister {
+    fn into(self) -> SegmentRegister {
+        match self {
+            InstRegister::SegReg(reg) => reg,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[repr(u8)]
@@ -141,7 +188,7 @@ pub const EFFECTIVE_ADDRESS_STRINGS: [&str; 8] = [
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RM {
-    Reg(Register),
+    Reg(InstRegister),
     Eff(Effective),
 }
 
@@ -150,7 +197,7 @@ const EFFECTIVE_DIRECT_ADDRESS: RM = RM::Eff(Effective::DirectAddress);
 /// Fetches the R/M value from the given byte's 3 least significant bits.
 pub fn get_rm(byte: u8, mode: Mode) -> RM {
     if mode == Mode::RegisterMode {
-        RM::Reg(get_register(byte))
+        RM::Reg(get_register(byte).into())
     } else {
         get_rm_effective_address(byte)
     }
@@ -158,7 +205,10 @@ pub fn get_rm(byte: u8, mode: Mode) -> RM {
 
 #[test]
 fn test_get_rm() {
-    assert_eq!(get_rm(0b011, Mode::RegisterMode), RM::Reg(Register::BX));
+    assert_eq!(
+        get_rm(0b011, Mode::RegisterMode),
+        RM::Reg(InstRegister::Reg(Register::BX))
+    );
     assert_eq!(
         get_rm(0b01110, Mode::MemoryMode),
         RM::Eff(Effective::DirectAddress)
@@ -215,6 +265,13 @@ impl InstructionFields {
         shift_rotate: false,
         zero: false,
     };
+    pub const SET: InstructionFields = InstructionFields {
+        word: true,
+        sign: true,
+        direction: true,
+        shift_rotate: true,
+        zero: true,
+    };
 
     pub const fn parse(byte: u8) -> InstructionFields {
         let first_flag = byte & 0b1 == 0b1;
@@ -256,7 +313,7 @@ pub struct InstructionDataFields {
 impl InstructionDataFields {
     pub const EMPTY: InstructionDataFields = InstructionDataFields {
         mode: Mode::RegisterMode,
-        rm: RM::Reg(Register::AX),
+        rm: RM::Reg(InstRegister::Reg(Register::AX)),
     };
     pub const DIRECT_ADDRESS: InstructionDataFields = InstructionDataFields {
         mode: Mode::MemoryMode,
@@ -275,7 +332,7 @@ impl InstructionDataFields {
 fn test_instruction_data_fields_parse() {
     let fields = InstructionDataFields::parse(0b11000001);
     assert_eq!(fields.mode, Mode::RegisterMode);
-    assert_eq!(fields.rm, RM::Reg(Register::CX));
+    assert_eq!(fields.rm, RM::Reg(InstRegister::Reg(Register::CX)));
 
     let fields = InstructionDataFields::parse(0b00000100);
     assert_eq!(fields.mode, Mode::MemoryMode);

@@ -4,7 +4,7 @@ use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
         parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
-        InstructionDataFields, InstructionFields, Register,
+        InstRegister, InstructionDataFields, InstructionFields, Register,
     },
     instruction::Instruction,
     Description,
@@ -63,7 +63,7 @@ pub fn parse_mov_memory_to_accumulator(bytes: &[u8]) -> Instruction {
         mnemonic: "mov",
         length: 3,
         fields,
-        register: Register::AX,
+        register: InstRegister::Reg(Register::AX),
         data_fields: InstructionDataFields::DIRECT_ADDRESS,
         disp,
         data: 0,

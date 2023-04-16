@@ -3,7 +3,7 @@ use phf::{phf_map, Map};
 use crate::{writer::Writer, Instruction};
 
 use super::{
-    common::{get_disp_value, InstructionDataFields, InstructionFields, Register},
+    common::{get_disp_value, InstRegister, InstructionDataFields, InstructionFields, Register},
     Description,
 };
 
@@ -39,7 +39,7 @@ fn parse_conditional_jump(bytes: &[u8]) -> Instruction {
         mnemonic,
         length: 2,
         fields: InstructionFields::EMPTY,
-        register: Register::AX,
+        register: InstRegister::Reg(Register::AX),
         data_fields: InstructionDataFields::EMPTY,
         disp,
         data: 0,

@@ -2,8 +2,9 @@ use crate::writer::Writer;
 
 use super::{
     common::{
-        Effective, InstructionDataFields, InstructionFields, Mode, Register, BYTE_REGISTER_STRINGS,
-        EFFECTIVE_ADDRESS_STRINGS, RM, WORD_REGISTER_STRINGS,
+        Effective, InstRegister, InstructionDataFields, InstructionFields, Mode,
+        BYTE_REGISTER_STRINGS, EFFECTIVE_ADDRESS_STRINGS, RM, SEGMENT_REGISTER_STRINGS,
+        WORD_REGISTER_STRINGS,
     },
     descriptions::Description,
     get_description,
@@ -17,7 +18,7 @@ pub struct Instruction {
     pub disp: i16,
     pub data: u16,
     pub fields: InstructionFields,
-    pub register: Register,
+    pub register: InstRegister,
     pub description: &'static Description,
 }
 
@@ -57,11 +58,16 @@ impl Instruction {
         }
     }
 
-    fn register_to_str(&self, register: Register) -> &str {
-        if self.fields.word {
-            &WORD_REGISTER_STRINGS[register as usize]
-        } else {
-            &BYTE_REGISTER_STRINGS[register as usize]
+    fn register_to_str(&self, register: InstRegister) -> &str {
+        match register {
+            InstRegister::Reg(reg) => {
+                if self.fields.word {
+                    &WORD_REGISTER_STRINGS[reg as usize]
+                } else {
+                    &BYTE_REGISTER_STRINGS[reg as usize]
+                }
+            }
+            InstRegister::SegReg(reg) => &SEGMENT_REGISTER_STRINGS[reg as usize],
         }
     }
 
