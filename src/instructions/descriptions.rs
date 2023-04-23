@@ -64,6 +64,8 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b00000111 | 0b00001111 | 0b00010111 | 0b00011111 => &push_pop::POP_SEGMENT_REGISTER,
         0b10000110 | 0b10000111 => &data_transfer::XCHG_MEMORY_WITH_REGISTER,
         0b10010000..=0b10010111 => &data_transfer::XCHG_REGISTER_WITH_ACCUMULATOR,
+        0b11100100..=0b11100111 => &data_transfer::IN_OUT_FIXED_PORT,
+        0b11101100..=0b11101111 => &data_transfer::IN_OUT_VARIABLE_PORT,
         0b00000000..=0b00000011 => &add::TO_REGISTER,
         0b10000000..=0b10000011 => &arithmetic::IMMEDIATE_TO_REGISTER_MEMORY,
         0b00000100 | 0b00000101 => &add::IMMEDIATE_TO_ACCUMULATOR,

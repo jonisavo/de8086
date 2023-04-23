@@ -87,6 +87,14 @@ xchg cx, dx
 xchg si, cx
 xchg cl, ah
 
+; In / out
+in al, 200
+in al, dx
+in ax, dx
+
+out 44, ax
+out dx, al
+
 ; Add
 add bx, [bx+si]
 add bx, [bp]
