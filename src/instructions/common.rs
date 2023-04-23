@@ -386,20 +386,3 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
 
     writer.end_line();
 }
-
-pub fn create_single_byte_instruction(
-    mnemonic: &'static str,
-    description: &'static Description,
-    register: InstRegister,
-) -> Instruction {
-    Instruction {
-        mnemonic,
-        length: 1,
-        fields: InstructionFields::SET,
-        register,
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: 0,
-        description,
-    }
-}

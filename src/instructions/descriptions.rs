@@ -1,7 +1,6 @@
 use super::{
     arithmetic::{self, add, cmp, sub},
     common::{InstRegister, InstructionDataFields, InstructionFields, Register},
-    data_transfer,
     instruction::Instruction,
     jumps, mov, push_pop,
 };
@@ -49,8 +48,8 @@ pub const UNIMPLEMENTED: Description = Description {
     write_fn: unimplemented_write,
 };
 
-pub fn resolve(bytes: &[u8]) -> &'static Description {
-    match bytes[0] {
+pub fn get_description(byte: u8) -> &'static Description {
+    match byte {
         0b10001000..=0b10001011 => &mov::TO_REGISTER,
         0b11000110 | 0b11000111 => &mov::IMMEDIATE_TO_MEMORY,
         0b10110000..=0b10111111 => &mov::IMMEDIATE_TO_REGISTER,
@@ -62,8 +61,6 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b10001111 => &push_pop::PUSH_POP_REGISTER_OR_MEMORY,
         0b01011000..=0b01011111 => &push_pop::POP_REGISTER,
         0b00000111 | 0b00001111 | 0b00010111 | 0b00011111 => &push_pop::POP_SEGMENT_REGISTER,
-        0b10000110 | 0b10000111 => &data_transfer::XCHG_MEMORY_WITH_REGISTER,
-        0b10010000..=0b10010111 => &data_transfer::XCHG_REGISTER_WITH_ACCUMULATOR,
         0b00000000..=0b00000011 => &add::TO_REGISTER,
         0b10000000..=0b10000011 => &arithmetic::IMMEDIATE_TO_REGISTER_MEMORY,
         0b00000100 | 0b00000101 => &add::IMMEDIATE_TO_ACCUMULATOR,

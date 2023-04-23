@@ -7,7 +7,7 @@ use super::{
         WORD_REGISTER_STRINGS,
     },
     descriptions::Description,
-    resolve,
+    get_description,
 };
 
 #[derive(Debug)]
@@ -28,7 +28,7 @@ impl Instruction {
             return None;
         }
 
-        let description = resolve(bytes);
+        let description = get_description(bytes[0]);
         let parsed = description.parse(bytes);
 
         if parsed.length != 0 {
