@@ -2,8 +2,8 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        get_disp_value, get_displacement_amount, get_register, get_segment_register, InstRegister,
-        InstructionDataFields, InstructionFields,
+        create_single_byte_instruction, get_disp_value, get_displacement_amount, get_register,
+        get_segment_register, InstructionDataFields, InstructionFields,
     },
     Description,
 };
@@ -33,23 +33,6 @@ pub fn parse_push_pop_register_or_memory(bytes: &[u8]) -> Instruction {
     }
 }
 
-fn create_push_pop_register_instruction(
-    mnemonic: &'static str,
-    description: &'static Description,
-    register: InstRegister,
-) -> Instruction {
-    Instruction {
-        mnemonic,
-        length: 1,
-        fields: InstructionFields::SET,
-        register,
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: 0,
-        description,
-    }
-}
-
 pub fn write_push_or_pop(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
@@ -66,27 +49,27 @@ pub const PUSH_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes| {
         let register = get_register(bytes[0]);
-        create_push_pop_register_instruction("push", &PUSH_REGISTER, register)
+        create_single_byte_instruction("push", &PUSH_REGISTER, register)
     },
 };
 pub const POP_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes| {
         let register = get_register(bytes[0]);
-        create_push_pop_register_instruction("pop", &POP_REGISTER, register)
+        create_single_byte_instruction("pop", &POP_REGISTER, register)
     },
 };
 pub const PUSH_SEGMENT_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes| {
         let register = get_segment_register(bytes[0] >> 3);
-        create_push_pop_register_instruction("push", &PUSH_SEGMENT_REGISTER, register)
+        create_single_byte_instruction("push", &PUSH_SEGMENT_REGISTER, register)
     },
 };
 pub const POP_SEGMENT_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes| {
         let register = get_segment_register(bytes[0] >> 3);
-        create_push_pop_register_instruction("pop", &POP_SEGMENT_REGISTER, register)
+        create_single_byte_instruction("pop", &POP_SEGMENT_REGISTER, register)
     },
 };
