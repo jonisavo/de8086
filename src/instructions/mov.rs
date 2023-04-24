@@ -20,69 +20,57 @@ pub fn write_mov_immediate_to_memory(writer: &mut Writer, instruction: &Instruct
         .end_line();
 }
 
-pub fn parse_mov_immediate_to_memory(bytes: &[u8]) -> Instruction {
+pub fn parse_mov_immediate_to_memory(bytes: &[u8], inst: &mut Instruction) {
     let fields = InstructionFields::parse(bytes[0]);
     let displacement = get_displacement_amount(bytes[1]);
     let immediate_length = fields.word as u8 + 1;
     let data = get_data_value(bytes, fields.word, 2 + displacement as usize);
 
-    Instruction {
-        mnemonic: "mov",
-        length: 2 + displacement + immediate_length,
-        fields,
-        register: get_register(bytes[1] >> 3),
-        data_fields: InstructionDataFields::parse(bytes[1]),
-        disp: get_disp_value(&bytes, displacement, 2),
-        data,
-        description: &IMMEDIATE_TO_MEMORY,
-    }
+    inst.mnemonic = "mov";
+    inst.length = 2 + displacement + immediate_length;
+    inst.fields = fields;
+    inst.register = get_register(bytes[1] >> 3);
+    inst.data_fields = InstructionDataFields::parse(bytes[1]);
+    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.data = data;
+    inst.description = &IMMEDIATE_TO_MEMORY;
 }
 
-pub fn parse_mov_immediate_to_register(bytes: &[u8]) -> Instruction {
+pub fn parse_mov_immediate_to_register(bytes: &[u8], inst: &mut Instruction) {
     let fields = InstructionFields::parse(bytes[0] >> 3);
     let length = fields.word as u8 + 2;
     let data = get_data_value(bytes, fields.word, 1);
 
-    Instruction {
-        mnemonic: "mov",
-        length,
-        fields,
-        register: get_register(bytes[0]),
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data,
-        description: &IMMEDIATE_TO_REGISTER,
-    }
+    inst.mnemonic = "mov";
+    inst.length = length;
+    inst.fields = fields;
+    inst.register = get_register(bytes[0]);
+    inst.data = data;
+    inst.description = &IMMEDIATE_TO_REGISTER;
 }
 
-pub fn parse_mov_memory_to_accumulator(bytes: &[u8]) -> Instruction {
+pub fn parse_mov_memory_to_accumulator(bytes: &[u8], inst: &mut Instruction) {
     let mut fields = InstructionFields::parse(bytes[0]);
     fields.direction = !fields.direction;
-    let disp = get_disp_value(bytes, 2, 1);
 
-    Instruction {
-        mnemonic: "mov",
-        length: 3,
-        fields,
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::DIRECT_ADDRESS,
-        disp,
-        data: 0,
-        description: &MEMORY_TO_ACCUMULATOR,
-    }
+    inst.mnemonic = "mov";
+    inst.length = 3;
+    inst.fields = fields;
+    inst.register = InstRegister::Reg(Register::AX);
+    inst.data_fields = InstructionDataFields::DIRECT_ADDRESS;
+    inst.disp = get_disp_value(bytes, 2, 1);
+    inst.description = &MEMORY_TO_ACCUMULATOR;
 }
 
-pub fn parse_mov_to_segment_register(bytes: &[u8]) -> Instruction {
-    let mut instruction = parse_typical_instruction("mov", bytes, &TO_SEGMENT_REGISTER);
+pub fn parse_mov_to_segment_register(bytes: &[u8], inst: &mut Instruction) {
+    parse_typical_instruction(inst, "mov", bytes, &TO_SEGMENT_REGISTER);
 
-    instruction.register = get_segment_register(bytes[1] >> 3);
-    instruction.fields.word = true;
-
-    instruction
+    inst.register = get_segment_register(bytes[1] >> 3);
+    inst.fields.word = true;
 }
 
 pub const TO_REGISTER: Description = Description {
-    parse_fn: |b| parse_typical_instruction("mov", b, &TO_REGISTER),
+    parse_fn: |b, inst| parse_typical_instruction(inst, "mov", b, &TO_REGISTER),
     write_fn: |writer, inst| write_typical_instruction(writer, inst),
 };
 pub const IMMEDIATE_TO_MEMORY: Description = Description {

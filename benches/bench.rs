@@ -2,27 +2,29 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use de8086::instructions::mov::{IMMEDIATE_TO_REGISTER, MEMORY_TO_ACCUMULATOR, TO_REGISTER};
 use de8086::parser::Parser;
 use de8086::writer::Writer;
+use de8086::Instruction;
 
 const KITCHEN_SINK_BYTES: &[u8] = include_bytes!("../test/kitchen_sink");
 const MOV_FILE_BYTES: &[u8] = include_bytes!("../test/mov_file");
 
 fn benchmark_parse_mov(c: &mut Criterion) {
     let mut group = c.benchmark_group("mov");
+    let mut instruction = Instruction::EMPTY;
     group.bench_function("reg to reg", |b| {
         const BYTES: [u8; 2] = [0b10001001, 0b11011100];
-        b.iter(|| TO_REGISTER.parse(black_box(&BYTES)))
+        b.iter(|| TO_REGISTER.parse(black_box(&BYTES), &mut instruction))
     });
     group.bench_function("bp + si + constant calculation", |b| {
         const BYTES: [u8; 4] = [0b10001001, 0b10011010, 0xab, 0xcd];
-        b.iter(|| TO_REGISTER.parse(black_box(&BYTES)))
+        b.iter(|| TO_REGISTER.parse(black_box(&BYTES), &mut instruction))
     });
     group.bench_function("immediate to register", |b| {
         const BYTES: [u8; 3] = [0b10111100, 0x12, 0x34];
-        b.iter(|| IMMEDIATE_TO_REGISTER.parse(black_box(&BYTES)))
+        b.iter(|| IMMEDIATE_TO_REGISTER.parse(black_box(&BYTES), &mut instruction))
     });
     group.bench_function("memory to accumulator", |b| {
         const BYTES: [u8; 3] = [0b10100001, 0x12, 0x34];
-        b.iter(|| MEMORY_TO_ACCUMULATOR.parse(black_box(&BYTES)))
+        b.iter(|| MEMORY_TO_ACCUMULATOR.parse(black_box(&BYTES), &mut instruction))
     });
 }
 

@@ -3,27 +3,27 @@ use crate::{writer::Writer, Instruction};
 use super::{
     common::{
         create_single_byte_instruction, get_register, parse_typical_instruction,
-        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields,
-        Register, WORD_REGISTER_STRINGS,
+        write_typical_instruction, InstRegister, InstructionFields, Register,
+        WORD_REGISTER_STRINGS,
     },
     Description,
 };
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {
     write_fn: write_typical_instruction,
-    parse_fn: |bytes| parse_typical_instruction("xchg", bytes, &XCHG_MEMORY_WITH_REGISTER),
+    parse_fn: |bytes, inst| {
+        parse_typical_instruction(inst, "xchg", bytes, &XCHG_MEMORY_WITH_REGISTER)
+    },
 };
 pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
     write_fn: write_typical_instruction,
-    parse_fn: |bytes| {
+    parse_fn: |bytes, inst| {
         let register = get_register(bytes[0]);
-        let mut instruction =
-            create_single_byte_instruction("xchg", &XCHG_REGISTER_WITH_ACCUMULATOR, register);
+
+        create_single_byte_instruction(inst, "xchg", &XCHG_REGISTER_WITH_ACCUMULATOR, register);
 
         // Accumulator is the destination, source is the register
-        instruction.fields.direction = false;
-
-        instruction
+        inst.fields.direction = false;
     },
 };
 
@@ -70,36 +70,27 @@ pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction
         .end_line();
 }
 
-pub fn parse_in_out_fixed_port(bytes: &[u8]) -> Instruction {
+pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
     let second_bit = bytes[0] >> 1 & 0b1;
     let mnemonic = if second_bit == 0 { "in" } else { "out" };
 
-    Instruction {
-        mnemonic,
-        length: 2,
-        fields: InstructionFields::parse(bytes[0]),
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: bytes[1] as u16,
-        description: &IN_OUT_FIXED_PORT,
-    }
+    inst.mnemonic = mnemonic;
+    inst.length = 2;
+    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.register = InstRegister::Reg(Register::AX);
+    inst.data = bytes[1] as u16;
+    inst.description = &IN_OUT_FIXED_PORT;
 }
 
-pub fn parse_in_out_variable_port(bytes: &[u8]) -> Instruction {
+pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
     let second_bit = bytes[0] >> 1 & 0b1;
     let mnemonic = if second_bit == 0 { "in" } else { "out" };
 
-    Instruction {
-        mnemonic,
-        length: 1,
-        fields: InstructionFields::parse(bytes[0]),
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: 0,
-        description: &IN_OUT_VARIABLE_PORT,
-    }
+    inst.mnemonic = mnemonic;
+    inst.length = 1;
+    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.register = InstRegister::Reg(Register::AX);
+    inst.description = &IN_OUT_VARIABLE_PORT;
 }
 
 pub const IN_OUT_FIXED_PORT: Description = Description {

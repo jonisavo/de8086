@@ -1,6 +1,5 @@
 use super::{
     arithmetic::{self, add, cmp, sub},
-    common::{InstRegister, InstructionDataFields, InstructionFields, Register},
     data_transfer,
     instruction::Instruction,
     jumps, mov, push_pop,
@@ -9,13 +8,13 @@ use crate::writer::Writer;
 use std::fmt::Debug;
 
 pub struct Description {
-    pub parse_fn: fn(&[u8]) -> Instruction,
+    pub parse_fn: fn(&[u8], &mut Instruction),
     pub write_fn: fn(&mut Writer, &Instruction),
 }
 
 impl Description {
-    pub fn parse(&'static self, bytes: &[u8]) -> Instruction {
-        (self.parse_fn)(bytes)
+    pub fn parse(&'static self, bytes: &[u8], inst: &mut Instruction) {
+        (self.parse_fn)(bytes, inst)
     }
 }
 
@@ -25,19 +24,10 @@ impl Debug for Description {
     }
 }
 
-const EMPTY_FIELDS: InstructionFields = InstructionFields::parse(0);
-
-fn unimplemented_parse(_bytes: &[u8]) -> Instruction {
-    Instruction {
-        mnemonic: "unimplemented",
-        length: 0,
-        fields: EMPTY_FIELDS,
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: 0,
-        description: &UNIMPLEMENTED,
-    }
+fn unimplemented_parse(_bytes: &[u8], inst: &mut Instruction) {
+    inst.mnemonic = "unimplemented";
+    inst.length = 0;
+    inst.description = &UNIMPLEMENTED;
 }
 
 fn unimplemented_write(_writer: &mut Writer, _instruction: &Instruction) {

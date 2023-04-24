@@ -2,10 +2,7 @@ use phf::{phf_map, Map};
 
 use crate::{writer::Writer, Instruction};
 
-use super::{
-    common::{get_disp_value, InstRegister, InstructionDataFields, InstructionFields, Register},
-    Description,
-};
+use super::{common::get_disp_value, Description};
 
 pub const CONDITIONAL_JUMP_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
     0b01110100u8 => "je",
@@ -30,21 +27,13 @@ pub const CONDITIONAL_JUMP_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
     0b11100011u8 => "jcxz",
 };
 
-fn parse_conditional_jump(bytes: &[u8]) -> Instruction {
+fn parse_conditional_jump(bytes: &[u8], inst: &mut Instruction) {
     let byte = bytes[0] as u8;
-    let mnemonic = CONDITIONAL_JUMP_MNEMONIC_MAP.get(&byte).unwrap();
-    let disp = get_disp_value(bytes, 1, 1);
 
-    Instruction {
-        mnemonic,
-        length: 2,
-        fields: InstructionFields::EMPTY,
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::EMPTY,
-        disp,
-        data: 0,
-        description: &CONDITIONAL_JUMP,
-    }
+    inst.mnemonic = CONDITIONAL_JUMP_MNEMONIC_MAP.get(&byte).unwrap();
+    inst.length = 2;
+    inst.disp = get_disp_value(bytes, 1, 1);
+    inst.description = &CONDITIONAL_JUMP;
 }
 
 fn write_conditional_jump(writer: &mut Writer, instruction: &Instruction) {

@@ -2,15 +2,15 @@ use crate::writer::Writer;
 
 use super::{
     common::{
-        Effective, InstRegister, InstructionDataFields, InstructionFields, Mode,
+        Effective, InstRegister, InstructionDataFields, InstructionFields, Mode, Register,
         BYTE_REGISTER_STRINGS, EFFECTIVE_ADDRESS_STRINGS, RM, SEGMENT_REGISTER_STRINGS,
         WORD_REGISTER_STRINGS,
     },
-    descriptions::Description,
+    descriptions::{Description, UNIMPLEMENTED},
     resolve,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Instruction {
     pub mnemonic: &'static str,
     pub length: u8,
@@ -23,19 +23,43 @@ pub struct Instruction {
 }
 
 impl Instruction {
+    pub const EMPTY: Instruction = Instruction {
+        mnemonic: "",
+        length: 0,
+        data_fields: InstructionDataFields::EMPTY,
+        disp: 0,
+        data: 0,
+        fields: InstructionFields::EMPTY,
+        register: InstRegister::Reg(Register::AX),
+        description: &UNIMPLEMENTED,
+    };
+
     pub fn parse(bytes: &[u8]) -> Option<Self> {
         if bytes.len() == 0 {
             return None;
         }
 
-        let description = resolve(bytes);
-        let parsed = description.parse(bytes);
+        let mut instruction = Instruction::EMPTY;
 
-        if parsed.length != 0 {
-            Some(parsed)
+        let description = resolve(bytes);
+        description.parse(bytes, &mut instruction);
+
+        if instruction.length != 0 {
+            Some(instruction)
         } else {
             None
         }
+    }
+
+    pub fn clear(instruction: &mut Self) {
+        instruction.mnemonic = Self::EMPTY.mnemonic;
+        instruction.length = Self::EMPTY.length;
+        instruction.data_fields = Self::EMPTY.data_fields;
+        instruction.disp = Self::EMPTY.disp;
+        instruction.data = Self::EMPTY.data;
+        instruction.fields = Self::EMPTY.fields;
+        instruction.register = Self::EMPTY.register;
+        instruction.description = Self::EMPTY.description;
     }
 
     pub fn write(&self, writer: &mut Writer) {

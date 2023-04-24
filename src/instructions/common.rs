@@ -241,7 +241,7 @@ pub const WORD_REGISTER_STRINGS: [&str; 8] = ["ax", "cx", "dx", "bx", "sp", "bp"
 
 pub const BYTE_REGISTER_STRINGS: [&str; 8] = ["al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"];
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InstructionFields {
     // Instruction operates on word
     pub word: bool,
@@ -304,7 +304,7 @@ fn test_parse_instruction_fields() {
     assert_eq!(fields.zero, false);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct InstructionDataFields {
     pub mode: Mode,
     pub rm: RM,
@@ -349,22 +349,20 @@ pub fn write_typical_instruction(writer: &mut Writer, instruction: &Instruction)
 }
 
 pub fn parse_typical_instruction(
+    inst: &mut Instruction,
     mnemonic: &'static str,
     bytes: &[u8],
     description: &'static Description,
-) -> Instruction {
+) {
     let displacement = get_displacement_amount(bytes[1]);
 
-    Instruction {
-        mnemonic,
-        length: 2 + displacement,
-        fields: InstructionFields::parse(bytes[0]),
-        register: get_register(bytes[1] >> 3),
-        data_fields: InstructionDataFields::parse(bytes[1]),
-        disp: get_disp_value(&bytes, displacement, 2),
-        data: 0,
-        description,
-    }
+    inst.mnemonic = mnemonic;
+    inst.length = 2 + displacement;
+    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.register = get_register(bytes[1] >> 3);
+    inst.data_fields = InstructionDataFields::parse(bytes[1]);
+    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.description = description;
 }
 
 pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instruction) {
@@ -388,18 +386,14 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
 }
 
 pub fn create_single_byte_instruction(
+    inst: &mut Instruction,
     mnemonic: &'static str,
     description: &'static Description,
     register: InstRegister,
-) -> Instruction {
-    Instruction {
-        mnemonic,
-        length: 1,
-        fields: InstructionFields::SET,
-        register,
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data: 0,
-        description,
-    }
+) {
+    inst.mnemonic = mnemonic;
+    inst.length = 1;
+    inst.fields = InstructionFields::SET;
+    inst.register = register;
+    inst.description = description;
 }

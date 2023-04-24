@@ -1,4 +1,5 @@
 use crate::instructions::instruction::Instruction;
+use crate::instructions::resolve;
 use std::error::Error;
 use std::fmt;
 
@@ -6,6 +7,7 @@ use std::fmt;
 pub struct Parser<'a> {
     bytes: &'a [u8],
     current_index: usize,
+    instruction: Instruction,
 }
 
 #[derive(Debug)]
@@ -28,6 +30,7 @@ impl<'a> Parser<'a> {
         Ok(Self {
             bytes,
             current_index: 0,
+            instruction: Instruction::EMPTY,
         })
     }
 }
@@ -45,10 +48,16 @@ impl Iterator for Parser<'_> {
 
         let remaining_bytes_slice = &self.bytes[self.current_index..];
 
-        let parsed = Instruction::parse(remaining_bytes_slice)?;
+        Instruction::clear(&mut self.instruction);
+        let description = resolve(remaining_bytes_slice);
+        description.parse(remaining_bytes_slice, &mut self.instruction);
 
-        self.current_index += parsed.length as usize;
+        if self.instruction.length == 0 {
+            return None;
+        }
 
-        Some(parsed)
+        self.current_index += self.instruction.length as usize;
+
+        Some(self.instruction)
     }
 }

@@ -8,32 +8,26 @@ use super::{
     Description,
 };
 
-pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8]) -> Instruction {
+pub const ARITHMETIC_MNEMONICS: [&str; 8] = ["add", "or", "adc", "sbb", "and", "sub", "xor", "cmp"];
+
+pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8], inst: &mut Instruction) {
     let fields = InstructionFields::parse(bytes[0]);
     let displacement = get_displacement_amount(bytes[1]);
-    let immediate_length = (fields.word && !fields.sign) as u8 + 1;
-    let data = get_data_value(
-        bytes,
-        fields.word && !fields.sign,
-        2 + displacement as usize,
-    );
+    let has_u16_immediate = fields.word && !fields.sign;
+    let immediate_length = has_u16_immediate as u8 + 1;
+    let data = get_data_value(bytes, has_u16_immediate, 2 + displacement as usize);
     let register = get_register(bytes[1] >> 3);
     let register_number = <InstRegister as Into<Register>>::into(register) as usize;
-    let mnemonic = ARITHMETIC_MNEMONICS[register_number];
 
-    Instruction {
-        mnemonic,
-        length: 2 + displacement + immediate_length,
-        fields,
-        register,
-        data_fields: InstructionDataFields::parse(bytes[1]),
-        disp: get_disp_value(&bytes, displacement, 2),
-        data,
-        description: &IMMEDIATE_TO_REGISTER_MEMORY,
-    }
+    inst.mnemonic = ARITHMETIC_MNEMONICS[register_number];
+    inst.length = 2 + displacement + immediate_length;
+    inst.fields = fields;
+    inst.register = register;
+    inst.data_fields = InstructionDataFields::parse(bytes[1]);
+    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.data = data;
+    inst.description = &IMMEDIATE_TO_REGISTER_MEMORY;
 }
-
-pub const ARITHMETIC_MNEMONICS: [&str; 8] = ["add", "or", "adc", "sbb", "and", "sub", "xor", "cmp"];
 
 pub fn write_arithmetic_imm_to_register_memory(writer: &mut Writer, instruction: &Instruction) {
     writer
@@ -45,24 +39,21 @@ pub fn write_arithmetic_imm_to_register_memory(writer: &mut Writer, instruction:
 }
 
 pub fn parse_immediate_to_accumulator(
+    inst: &mut Instruction,
     mnemonic: &'static str,
     bytes: &[u8],
     description: &'static Description,
-) -> Instruction {
+) {
     let fields = InstructionFields::parse(bytes[0]);
     let length = fields.word as u8 + 2;
     let data = get_data_value(bytes, fields.word, 1);
 
-    Instruction {
-        mnemonic,
-        length,
-        fields,
-        register: InstRegister::Reg(Register::AX),
-        data_fields: InstructionDataFields::EMPTY,
-        disp: 0,
-        data,
-        description,
-    }
+    inst.mnemonic = mnemonic;
+    inst.length = length;
+    inst.fields = fields;
+    inst.register = InstRegister::Reg(Register::AX);
+    inst.data = data;
+    inst.description = description;
 }
 
 pub mod add {
@@ -76,11 +67,13 @@ pub mod add {
     use super::parse_immediate_to_accumulator;
 
     pub const TO_REGISTER: Description = Description {
-        parse_fn: |b| parse_typical_instruction("add", b, &TO_REGISTER),
+        parse_fn: |bytes, inst| parse_typical_instruction(inst, "add", bytes, &TO_REGISTER),
         write_fn: |writer, inst| write_typical_instruction(writer, inst),
     };
     pub const IMMEDIATE_TO_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes| parse_immediate_to_accumulator("add", bytes, &IMMEDIATE_TO_ACCUMULATOR),
+        parse_fn: |bytes, inst| {
+            parse_immediate_to_accumulator(inst, "add", bytes, &IMMEDIATE_TO_ACCUMULATOR)
+        },
         write_fn: |writer, inst| write_immediate_instruction(writer, inst),
     };
 }
@@ -96,11 +89,13 @@ pub mod sub {
     use super::parse_immediate_to_accumulator;
 
     pub const TO_REGISTER: Description = Description {
-        parse_fn: |b| parse_typical_instruction("sub", b, &TO_REGISTER),
+        parse_fn: |bytes, inst| parse_typical_instruction(inst, "sub", bytes, &TO_REGISTER),
         write_fn: |writer, inst| write_typical_instruction(writer, inst),
     };
     pub const IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes| parse_immediate_to_accumulator("sub", bytes, &IMMEDIATE_FROM_ACCUMULATOR),
+        parse_fn: |bytes, inst| {
+            parse_immediate_to_accumulator(inst, "sub", bytes, &IMMEDIATE_FROM_ACCUMULATOR)
+        },
         write_fn: |writer, inst| write_immediate_instruction(writer, inst),
     };
 }
@@ -116,11 +111,13 @@ pub mod cmp {
     use super::parse_immediate_to_accumulator;
 
     pub const TO_REGISTER: Description = Description {
-        parse_fn: |b| parse_typical_instruction("cmp", b, &TO_REGISTER),
+        parse_fn: |bytes, inst| parse_typical_instruction(inst, "cmp", bytes, &TO_REGISTER),
         write_fn: |writer, inst| write_typical_instruction(writer, inst),
     };
     pub const IMMEDIATE_WITH_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes| parse_immediate_to_accumulator("cmp", bytes, &IMMEDIATE_WITH_ACCUMULATOR),
+        parse_fn: |bytes, inst| {
+            parse_immediate_to_accumulator(inst, "cmp", bytes, &IMMEDIATE_WITH_ACCUMULATOR)
+        },
         write_fn: |writer, inst| write_immediate_instruction(writer, inst),
     };
 }
