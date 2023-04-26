@@ -3,9 +3,8 @@ use crate::writer::Writer;
 use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        get_segment_register, parse_typical_instruction, write_immediate_instruction,
+        get_segment_register, parse_typical_instruction, register, write_immediate_instruction,
         write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields,
-        Register,
     },
     instruction::Instruction,
     Description,
@@ -56,7 +55,7 @@ pub fn parse_mov_memory_to_accumulator(bytes: &[u8], inst: &mut Instruction) {
     inst.mnemonic = "mov";
     inst.length = 3;
     inst.fields = fields;
-    inst.register = InstRegister::Reg(Register::AX);
+    inst.register = InstRegister::Reg(register::AX);
     inst.data_fields = InstructionDataFields::DIRECT_ADDRESS;
     inst.disp = get_disp_value(bytes, 2, 1);
     inst.description = &MEMORY_TO_ACCUMULATOR;

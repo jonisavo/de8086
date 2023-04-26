@@ -2,9 +2,8 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        create_single_byte_instruction, get_register, parse_typical_instruction,
-        write_typical_instruction, InstRegister, InstructionFields, Register,
-        WORD_REGISTER_STRINGS,
+        create_single_byte_instruction, get_register, parse_typical_instruction, register,
+        write_typical_instruction, InstRegister, InstructionFields, WORD_REGISTER_STRINGS,
     },
     Description,
 };
@@ -48,7 +47,7 @@ pub fn write_in_out_fixed_port(writer: &mut Writer, instruction: &Instruction) {
 }
 
 pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction) {
-    const DX_STR: &str = &WORD_REGISTER_STRINGS[Register::DX as usize];
+    const DX_STR: &str = &WORD_REGISTER_STRINGS[register::DX as usize];
     let destination_string = &instruction.destination_string();
 
     let op1 = if instruction.mnemonic == "in" {
@@ -77,7 +76,7 @@ pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
     inst.mnemonic = mnemonic;
     inst.length = 2;
     inst.fields = InstructionFields::parse(bytes[0]);
-    inst.register = InstRegister::Reg(Register::AX);
+    inst.register = InstRegister::Reg(register::AX);
     inst.data = bytes[1] as u16;
     inst.description = &IN_OUT_FIXED_PORT;
 }
@@ -89,7 +88,7 @@ pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
     inst.mnemonic = mnemonic;
     inst.length = 1;
     inst.fields = InstructionFields::parse(bytes[0]);
-    inst.register = InstRegister::Reg(Register::AX);
+    inst.register = InstRegister::Reg(register::AX);
     inst.description = &IN_OUT_VARIABLE_PORT;
 }
 

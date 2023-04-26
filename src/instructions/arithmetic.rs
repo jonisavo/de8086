@@ -2,8 +2,8 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        get_data_value, get_disp_value, get_displacement_amount, get_register, InstRegister,
-        InstructionDataFields, InstructionFields, Register,
+        get_data_value, get_disp_value, get_displacement_amount, get_register, register,
+        InstRegister, InstructionDataFields, InstructionFields,
     },
     Description,
 };
@@ -17,9 +17,9 @@ pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8], inst: &mut Instruct
     let immediate_length = has_u16_immediate as u8 + 1;
     let data = get_data_value(bytes, has_u16_immediate, 2 + displacement as usize);
     let register = get_register(bytes[1] >> 3);
-    let register_number = <InstRegister as Into<Register>>::into(register) as usize;
+    let register_number = <InstRegister as Into<u8>>::into(register);
 
-    inst.mnemonic = ARITHMETIC_MNEMONICS[register_number];
+    inst.mnemonic = ARITHMETIC_MNEMONICS[register_number as usize];
     inst.length = 2 + displacement + immediate_length;
     inst.fields = fields;
     inst.register = register;
@@ -51,7 +51,7 @@ pub fn parse_immediate_to_accumulator(
     inst.mnemonic = mnemonic;
     inst.length = length;
     inst.fields = fields;
-    inst.register = InstRegister::Reg(Register::AX);
+    inst.register = InstRegister::Reg(register::AX);
     inst.data = data;
     inst.description = description;
 }
