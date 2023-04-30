@@ -47,7 +47,9 @@ impl Instruction {
         description.parse(bytes, &mut instruction);
 
         if instruction.length != 0 {
-            instruction.input = bytes[0..instruction.length as usize].try_into().unwrap();
+            for i in 0..instruction.length as usize {
+                instruction.input[i] = bytes[i];
+            }
             Some(instruction)
         } else {
             None
