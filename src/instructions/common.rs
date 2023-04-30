@@ -350,3 +350,7 @@ pub fn create_single_byte_instruction(
     inst.register = register;
     inst.description = description;
 }
+
+pub fn write_bare_instruction(writer: &mut Writer, instruction: &Instruction) {
+    writer.start_instruction(instruction).end_line();
+}

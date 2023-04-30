@@ -1,11 +1,25 @@
+use phf::{phf_map, Map};
+
 use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
         create_single_byte_instruction, get_register, parse_typical_instruction, register,
-        write_typical_instruction, InstRegister, InstructionFields, WORD_REGISTER_STRINGS,
+        write_bare_instruction, write_typical_instruction, InstRegister, InstructionFields,
+        WORD_REGISTER_STRINGS,
     },
     Description,
+};
+
+pub const DATA_TRANSFER_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
+    0b11010111u8 => "xlat",
+    0b10001101u8 => "lea",
+    0b11000101u8 => "lds",
+    0b11000100u8 => "les",
+    0b10011111u8 => "lahf",
+    0b10011110u8 => "sahf",
+    0b10011100u8 => "pushf",
+    0b10011101u8 => "popf",
 };
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {
@@ -93,10 +107,30 @@ pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
 }
 
 pub const IN_OUT_FIXED_PORT: Description = Description {
-    write_fn: write_in_out_fixed_port,
     parse_fn: parse_in_out_fixed_port,
+    write_fn: write_in_out_fixed_port,
 };
 pub const IN_OUT_VARIABLE_PORT: Description = Description {
-    write_fn: write_in_out_variable_port,
     parse_fn: parse_in_out_variable_port,
+    write_fn: write_in_out_variable_port,
+};
+
+pub const LEA_LDS_LES: Description = Description {
+    parse_fn: |bytes, inst| {
+        let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
+        parse_typical_instruction(inst, mnemonic, bytes, &LEA_LDS_LES);
+        inst.fields.direction = true;
+        inst.fields.word = true;
+    },
+    write_fn: write_typical_instruction,
+};
+
+pub const OTHER_DATA_TRANSFER: Description = Description {
+    parse_fn: |bytes, inst| {
+        let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
+        inst.mnemonic = mnemonic;
+        inst.length = 1;
+        inst.description = &OTHER_DATA_TRANSFER;
+    },
+    write_fn: write_bare_instruction,
 };

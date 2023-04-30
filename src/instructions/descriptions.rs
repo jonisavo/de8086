@@ -56,6 +56,10 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b10010000..=0b10010111 => &data_transfer::XCHG_REGISTER_WITH_ACCUMULATOR,
         0b11100100..=0b11100111 => &data_transfer::IN_OUT_FIXED_PORT,
         0b11101100..=0b11101111 => &data_transfer::IN_OUT_VARIABLE_PORT,
+        0b11010111 | 0b10011111 | 0b10011110 | 0b10011100 | 0b10011101 => {
+            &data_transfer::OTHER_DATA_TRANSFER
+        }
+        0b10001101 | 0b11000101 | 0b11000100 => &data_transfer::LEA_LDS_LES,
         0b00000000..=0b00000011 => &add::TO_REGISTER,
         0b10000000..=0b10000011 => &arithmetic::IMMEDIATE_TO_REGISTER_MEMORY,
         0b00000100 | 0b00000101 => &add::IMMEDIATE_TO_ACCUMULATOR,
