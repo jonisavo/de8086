@@ -51,17 +51,6 @@ impl Instruction {
         }
     }
 
-    pub fn clear(instruction: &mut Self) {
-        instruction.mnemonic = Self::EMPTY.mnemonic;
-        instruction.length = Self::EMPTY.length;
-        instruction.data_fields = Self::EMPTY.data_fields;
-        instruction.disp = Self::EMPTY.disp;
-        instruction.data = Self::EMPTY.data;
-        instruction.fields = Self::EMPTY.fields;
-        instruction.register = Self::EMPTY.register;
-        instruction.description = Self::EMPTY.description;
-    }
-
     pub fn write(&self, writer: &mut Writer) {
         (self.description.write_fn)(writer, self);
     }

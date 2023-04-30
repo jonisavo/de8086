@@ -48,7 +48,7 @@ impl Iterator for Parser<'_> {
 
         let remaining_bytes_slice = &self.bytes[self.current_index..];
 
-        Instruction::clear(&mut self.instruction);
+        self.instruction = Instruction::EMPTY;
         let description = resolve(remaining_bytes_slice);
         description.parse(remaining_bytes_slice, &mut self.instruction);
 
