@@ -2,8 +2,9 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        get_data_value, get_disp_value, get_displacement_amount, get_register, register,
-        InstRegister, InstructionDataFields, InstructionFields,
+        get_data_value, get_disp_value, get_displacement_amount, get_register,
+        parse_typical_instruction, register, write_bare_instruction, write_immediate_instruction,
+        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields, RM,
     },
     Description,
 };
@@ -56,73 +57,98 @@ pub fn parse_immediate_to_accumulator(
     inst.description = description;
 }
 
-pub mod add {
-    use crate::instructions::{
-        common::{
-            parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
-        },
-        Description,
-    };
+pub const ADD_TO_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "add", bytes, &ADD_TO_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const ADD_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_immediate_to_accumulator(inst, "add", bytes, &ADD_IMMEDIATE_TO_ACCUMULATOR)
+    },
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
 
-    use super::parse_immediate_to_accumulator;
+pub const ADC_TO_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "adc", bytes, &ADC_TO_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const ADC_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_immediate_to_accumulator(inst, "adc", bytes, &ADC_IMMEDIATE_TO_ACCUMULATOR)
+    },
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
 
-    pub const TO_REGISTER: Description = Description {
-        parse_fn: |bytes, inst| parse_typical_instruction(inst, "add", bytes, &TO_REGISTER),
-        write_fn: |writer, inst| write_typical_instruction(writer, inst),
-    };
-    pub const IMMEDIATE_TO_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes, inst| {
-            parse_immediate_to_accumulator(inst, "add", bytes, &IMMEDIATE_TO_ACCUMULATOR)
-        },
-        write_fn: |writer, inst| write_immediate_instruction(writer, inst),
-    };
-}
+pub const INC_REGISTER_OR_MEMORY: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "inc", bytes, &INC_REGISTER_OR_MEMORY),
+    write_fn: |writer, inst| {
+        writer.start_instruction(inst);
 
-pub mod sub {
-    use crate::instructions::{
-        common::{
-            parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
-        },
-        Description,
-    };
+        if let RM::Eff(_) = inst.data_fields.rm {
+            if inst.fields.word {
+                writer.write_str("word ");
+            } else {
+                writer.write_str("byte ");
+            }
+        }
 
-    use super::parse_immediate_to_accumulator;
+        writer
+            .write_str(&inst.address_to_string(inst.data_fields.rm))
+            .end_line();
+    },
+};
+pub const INC_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| {
+        inst.mnemonic = "inc";
+        inst.length = 1;
+        inst.register = get_register(bytes[0] & 0b111);
+        inst.fields.word = true;
+        inst.description = &INC_REGISTER;
+    },
+    write_fn: |writer, inst| {
+        writer
+            .start_instruction(inst)
+            .write_str(&inst.register.to_str())
+            .end_line();
+    },
+};
 
-    pub const TO_REGISTER: Description = Description {
-        parse_fn: |bytes, inst| parse_typical_instruction(inst, "sub", bytes, &TO_REGISTER),
-        write_fn: |writer, inst| write_typical_instruction(writer, inst),
-    };
-    pub const IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes, inst| {
-            parse_immediate_to_accumulator(inst, "sub", bytes, &IMMEDIATE_FROM_ACCUMULATOR)
-        },
-        write_fn: |writer, inst| write_immediate_instruction(writer, inst),
-    };
-}
+pub const SUB_FROM_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "sub", bytes, &SUB_FROM_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const SUB_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_immediate_to_accumulator(inst, "sub", bytes, &SUB_IMMEDIATE_FROM_ACCUMULATOR)
+    },
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
 
-pub mod cmp {
-    use crate::instructions::{
-        common::{
-            parse_typical_instruction, write_immediate_instruction, write_typical_instruction,
-        },
-        Description,
-    };
-
-    use super::parse_immediate_to_accumulator;
-
-    pub const TO_REGISTER: Description = Description {
-        parse_fn: |bytes, inst| parse_typical_instruction(inst, "cmp", bytes, &TO_REGISTER),
-        write_fn: |writer, inst| write_typical_instruction(writer, inst),
-    };
-    pub const IMMEDIATE_WITH_ACCUMULATOR: Description = Description {
-        parse_fn: |bytes, inst| {
-            parse_immediate_to_accumulator(inst, "cmp", bytes, &IMMEDIATE_WITH_ACCUMULATOR)
-        },
-        write_fn: |writer, inst| write_immediate_instruction(writer, inst),
-    };
-}
+pub const CMP_WITH_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "cmp", bytes, &CMP_WITH_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const CMP_IMMEDIATE_WITH_ACCUMULATOR: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_immediate_to_accumulator(inst, "cmp", bytes, &CMP_IMMEDIATE_WITH_ACCUMULATOR)
+    },
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
 
 pub const IMMEDIATE_TO_REGISTER_MEMORY: Description = Description {
     parse_fn: parse_arithmetic_imm_to_register_memory,
     write_fn: write_arithmetic_imm_to_register_memory,
+};
+
+pub const AAA_DAA: Description = Description {
+    parse_fn: |bytes, inst| {
+        if bytes[0] == 0b00110111 {
+            inst.mnemonic = "aaa"
+        } else {
+            inst.mnemonic = "daa"
+        }
+        inst.length = 1;
+        inst.description = &AAA_DAA;
+    },
+    write_fn: write_bare_instruction,
 };

@@ -124,6 +124,15 @@ pub enum InstRegister {
     SegReg(u8),
 }
 
+impl InstRegister {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            InstRegister::Reg(reg) => WORD_REGISTER_STRINGS[*reg as usize],
+            InstRegister::SegReg(reg) => SEGMENT_REGISTER_STRINGS[*reg as usize],
+        }
+    }
+}
+
 impl Into<u8> for InstRegister {
     fn into(self) -> u8 {
         match self {

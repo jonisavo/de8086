@@ -20,6 +20,7 @@ pub struct Instruction {
     pub fields: InstructionFields,
     pub register: InstRegister,
     pub description: &'static Description,
+    pub input: [u8; 6],
 }
 
 impl Instruction {
@@ -32,6 +33,7 @@ impl Instruction {
         fields: InstructionFields::EMPTY,
         register: InstRegister::Reg(register::AX),
         description: &UNIMPLEMENTED,
+        input: [0; 6],
     };
 
     pub fn parse(bytes: &[u8]) -> Option<Self> {
@@ -45,6 +47,7 @@ impl Instruction {
         description.parse(bytes, &mut instruction);
 
         if instruction.length != 0 {
+            instruction.input = bytes[0..instruction.length as usize].try_into().unwrap();
             Some(instruction)
         } else {
             None

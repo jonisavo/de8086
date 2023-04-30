@@ -1,6 +1,6 @@
 bits 16
 
-; Register/memory to/from register
+; Data transfer
 mov cx, bx
 mov ch, ah
 mov dx, bx
@@ -29,34 +29,27 @@ mov [si - 300h], cx
 mov dx, [bx - 32h]
 mov bp, [5]
 
-; Immediate to register / memory
 mov [bp + di], byte 7
 mov [bx + si - 1025], byte 1
 mov [di + 901], word 347
 
-; Immediate to register
 mov ax, 0x4f02
 mov bx, 0x01
 mov cl, 0x85
 mov dl, 0x05
 
-; Memory-to-accumulator
 mov ax, [2555]
 mov al, [16]
 
-; Accumulator-to-memory
 mov [2554], ax
 mov [15], al
 
-; Register/memory to segment register
 mov cs, ax
 mov es, [1234]
 
-; Segment register to register/memory
 mov [1234], ss
 mov ax, ds
 
-; Push and pop
 push word [bp + si]
 push word [3000]
 push word [bx + di - 30]
@@ -73,7 +66,6 @@ pop di
 pop si
 pop ds
 
-; Exchange
 xchg ax, [bp - 1000]
 xchg [bx + 50], bp
 
@@ -87,7 +79,6 @@ xchg cx, dx
 xchg si, cx
 xchg cl, ah
 
-; In / out
 in al, 200
 in al, dx
 in ax, dx
@@ -95,7 +86,6 @@ in ax, dx
 out 44, ax
 out dx, al
 
-; Other data transfer
 xlat
 lea ax, [bx + di + 1420]
 lea bx, [bp - 50]
@@ -117,7 +107,7 @@ sahf
 pushf
 popf
 
-; Add
+; Arithmetic
 add bx, [bx+si]
 add bx, [bp]
 add si, 2
@@ -143,7 +133,35 @@ add ax, 1000
 add al, -30
 add al, 9
 
-; Sub
+adc cx, [bp]
+adc dx, [bx + si]
+adc [bp + di + 5000], ah
+adc [bx], al
+adc sp, 392
+adc si, 5
+adc ax, 1000
+adc ah, 30
+adc al, 9
+adc cx, bx
+adc ch, al
+
+inc ax
+inc cx
+inc dh
+inc al
+inc ah
+inc sp
+inc di
+inc byte [bp + 1002]
+inc word [bx + 39]
+inc byte [bx + si + 5]
+inc word [bp + di - 10044]
+inc word [9349]
+inc byte [bp]
+
+aaa
+daa
+
 sub bx, [bx+si]
 sub bx, [bp]
 sub si, 2
@@ -169,7 +187,6 @@ sub ax, 1000
 sub al, -30
 sub al, 9
 
-; Cmp
 cmp bx, [bx+si]
 cmp bx, [bp]
 cmp si, 2
@@ -195,7 +212,7 @@ cmp ax, 1000
 cmp al, -30
 cmp al, 9
 
-; Conditional jumps
+; Jumps
 test_label0:
 jnz test_label1
 jnz test_label0

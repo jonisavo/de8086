@@ -15,6 +15,11 @@ struct Label {
     pub inserted: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct WriterOptions {
+    pub verbose: bool,
+}
+
 pub struct Writer {
     file_buffer: Vec<u8>,
     next_instruction_byte_index: usize,
@@ -22,10 +27,11 @@ pub struct Writer {
     instruction_buffer: Vec<WrittenInstruction>,
     label_map: HashMap<usize, Label>,
     current_instruction: Option<WrittenInstruction>,
+    options: WriterOptions,
 }
 
 impl Writer {
-    pub fn new() -> Self {
+    pub fn new(options: WriterOptions) -> Self {
         let mut buffer = Vec::new();
         let mut instruction_buffer = Vec::new();
         let mut label_map = HashMap::new();
@@ -41,7 +47,20 @@ impl Writer {
             instruction_buffer,
             label_map,
             current_instruction: None,
+            options,
         }
+    }
+
+    fn write_instruction_input(&mut self, instruction: &Instruction) {
+        self.write_str("; ");
+
+        assert!(instruction.length <= 6, "Instruction length is too long.");
+
+        for i in 0..instruction.length {
+            self.write_str(&format!("{:02x} ", instruction.input[i as usize]));
+        }
+
+        self.end_line();
     }
 
     pub fn start_instruction(&mut self, instruction: &Instruction) -> &mut Self {
@@ -56,6 +75,10 @@ impl Writer {
 
         if let Some(label_str) = label_str {
             self.write_str(&label_str);
+        }
+
+        if self.options.verbose {
+            self.write_instruction_input(instruction);
         }
 
         let written_instruction = WrittenInstruction {
@@ -200,7 +223,7 @@ impl Writer {
 
 #[test]
 fn test_writer_labels_add_before() {
-    let mut writer = Writer::new();
+    let mut writer = Writer::new(WriterOptions { verbose: false });
 
     let mov_instruction = Instruction::parse(&[0b1011_0000, 0b0000_0000]).unwrap();
     let add_instruction = Instruction::parse(&[0b0000_0100, 0b0000_0000]).unwrap();
@@ -274,7 +297,7 @@ je loc_1
 
 #[test]
 fn test_writer_labels_add_after() {
-    let mut writer = Writer::new();
+    let mut writer = Writer::new(WriterOptions { verbose: false });
 
     let add_instruction = Instruction::parse(&[0b0000_0100, 0b0000_0000]).unwrap();
     let sub_instruction = Instruction::parse(&[0b0010_1100, 0b0000_0000]).unwrap();

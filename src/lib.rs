@@ -4,7 +4,7 @@ pub mod parser;
 pub mod writer;
 
 use std::io::{stdout, Read, Write};
-use writer::Writer;
+use writer::{Writer, WriterOptions};
 
 fn read_file(filename: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let mut file = std::fs::File::open(filename)?;
@@ -16,9 +16,14 @@ fn read_file(filename: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     return Ok(buffer);
 }
 
-pub fn run(file_name: &str, bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut writer = Writer::new();
+pub fn run(
+    file_name: &str,
+    bytes: &[u8],
+    writer_options: WriterOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut writer = Writer::new(writer_options.clone());
     let parser = parser::Parser::build(bytes)?;
+    let mut index: usize = 0;
 
     writer.write_comment(file_name);
     writer.end_line();
@@ -27,18 +32,35 @@ pub fn run(file_name: &str, bytes: &[u8]) -> Result<(), Box<dyn std::error::Erro
 
     for instruction in parser {
         instruction.write(&mut writer);
+        index += instruction.length as usize;
     }
 
     stdout().write_all(writer.as_slice()).unwrap();
 
+    if writer_options.verbose && index < bytes.len() {
+        print!(
+            "Warning: {} bytes were not parsed. Bytes:",
+            bytes.len() - index,
+        );
+
+        for &byte in &bytes[index..] {
+            print!(" {:08b}", byte);
+        }
+
+        println!();
+    }
+
     Ok(())
 }
 
-pub fn run_from_file(file_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_from_file(
+    file_name: &str,
+    writer_options: WriterOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     let bytes = read_file(file_name)?;
     let base_name = std::path::Path::new(file_name)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("");
-    run(base_name, bytes.as_slice())
+    run(base_name, bytes.as_slice(), writer_options)
 }

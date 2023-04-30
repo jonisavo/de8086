@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use de8086::instructions::mov::{IMMEDIATE_TO_REGISTER, MEMORY_TO_ACCUMULATOR, TO_REGISTER};
 use de8086::parser::Parser;
-use de8086::writer::Writer;
+use de8086::writer::{Writer, WriterOptions};
 use de8086::Instruction;
 
 const KITCHEN_SINK_BYTES: &[u8] = include_bytes!("../test/kitchen_sink");
@@ -51,7 +51,7 @@ fn benchmark_file(c: &mut Criterion) {
 fn benchmark_write(c: &mut Criterion) {
     c.bench_function("write kitchen sink file", |b| {
         let parser = Parser::build(black_box(KITCHEN_SINK_BYTES)).unwrap();
-        let mut writer = Writer::new();
+        let mut writer = Writer::new(WriterOptions { verbose: false });
         let instructions = &parser.collect::<Vec<_>>();
         b.iter(move || {
             for instruction in instructions {
@@ -62,7 +62,7 @@ fn benchmark_write(c: &mut Criterion) {
 
     c.bench_function("write mov file (1000 elements)", |b| {
         let parser = Parser::build(black_box(MOV_FILE_BYTES)).unwrap();
-        let mut writer = Writer::new();
+        let mut writer = Writer::new(WriterOptions { verbose: false });
         let instructions = &parser.collect::<Vec<_>>();
         b.iter(move || {
             for instruction in instructions {
