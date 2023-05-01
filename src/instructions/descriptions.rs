@@ -41,6 +41,8 @@ fn resolve_f6_or_f7_byte(bytes: &[u8]) -> &'static Description {
         0b011 => &arithmetic::NEG,
         0b100 => &arithmetic::MUL,
         0b101 => &arithmetic::IMUL,
+        0b110 => &arithmetic::DIV,
+        0b111 => &arithmetic::IDIV,
         _ => &UNIMPLEMENTED,
     }
 }
@@ -106,6 +108,10 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b00111100 | 0b00111101 => &arithmetic::CMP_IMMEDIATE_WITH_ACCUMULATOR,
         0b00111111 => &arithmetic::AAS,
         0b00101111 => &arithmetic::DAS,
+        0b11010100 => &arithmetic::AAM,
+        0b11010101 => &arithmetic::AAD,
+        0b10011000 => &arithmetic::CBW,
+        0b10011001 => &arithmetic::CWD,
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001

@@ -202,3 +202,38 @@ pub const IMUL: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, "imul", bytes, &IMUL),
     write_fn: write_memory_or_register_instruction,
 };
+
+pub const AAM: Description = Description {
+    parse_fn: |_, inst| {
+        parse_bare_instruction(inst, "aam", &AAM);
+        inst.length = 2;
+    },
+    write_fn: write_bare_instruction,
+};
+
+pub const DIV: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "div", bytes, &DIV),
+    write_fn: write_memory_or_register_instruction,
+};
+pub const IDIV: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "idiv", bytes, &IDIV),
+    write_fn: write_memory_or_register_instruction,
+};
+
+pub const AAD: Description = Description {
+    parse_fn: |_, inst| {
+        parse_bare_instruction(inst, "aad", &AAD);
+        inst.length = 2;
+    },
+    write_fn: write_bare_instruction,
+};
+
+pub const CBW: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "cbw", &CBW),
+    write_fn: write_bare_instruction,
+};
+
+pub const CWD: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "cwd", &CWD),
+    write_fn: write_bare_instruction,
+};
