@@ -360,6 +360,16 @@ pub fn create_single_byte_instruction(
     inst.description = description;
 }
 
+pub fn parse_bare_instruction(
+    inst: &mut Instruction,
+    mnemonic: &'static str,
+    description: &'static Description,
+) {
+    inst.mnemonic = mnemonic;
+    inst.length = 1;
+    inst.description = description;
+}
+
 pub fn write_bare_instruction(writer: &mut Writer, instruction: &Instruction) {
     writer.start_instruction(instruction).end_line();
 }

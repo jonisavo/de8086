@@ -252,6 +252,19 @@ cmp ax, 1000
 cmp al, -30
 cmp al, 9
 
+aas
+das
+
+mul al
+mul cx
+mul word [bp]
+mul byte [bx + di + 500]
+
+imul ch
+imul dx
+imul byte [bx]
+imul word [9483]
+
 ; Jumps
 test_label0:
 jnz test_label1

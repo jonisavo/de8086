@@ -3,8 +3,9 @@ use crate::{writer::Writer, Instruction};
 use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        parse_typical_instruction, register, write_bare_instruction, write_immediate_instruction,
-        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields, RM,
+        parse_bare_instruction, parse_typical_instruction, register, write_bare_instruction,
+        write_immediate_instruction, write_typical_instruction, InstRegister,
+        InstructionDataFields, InstructionFields, RM,
     },
     Description,
 };
@@ -175,15 +176,29 @@ pub const IMMEDIATE_TO_REGISTER_MEMORY: Description = Description {
     write_fn: write_arithmetic_imm_to_register_memory,
 };
 
-pub const AAA_DAA: Description = Description {
-    parse_fn: |bytes, inst| {
-        if bytes[0] == 0b00110111 {
-            inst.mnemonic = "aaa"
-        } else {
-            inst.mnemonic = "daa"
-        }
-        inst.length = 1;
-        inst.description = &AAA_DAA;
-    },
+pub const AAA: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "aaa", &AAA),
     write_fn: write_bare_instruction,
+};
+pub const DAA: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "daa", &DAA),
+    write_fn: write_bare_instruction,
+};
+
+pub const AAS: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "aas", &AAS),
+    write_fn: write_bare_instruction,
+};
+pub const DAS: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "das", &DAS),
+    write_fn: write_bare_instruction,
+};
+
+pub const MUL: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "mul", bytes, &MUL),
+    write_fn: write_memory_or_register_instruction,
+};
+pub const IMUL: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "imul", bytes, &IMUL),
+    write_fn: write_memory_or_register_instruction,
 };

@@ -39,6 +39,8 @@ fn resolve_f6_or_f7_byte(bytes: &[u8]) -> &'static Description {
 
     match opcode & 0b111 {
         0b011 => &arithmetic::NEG,
+        0b100 => &arithmetic::MUL,
+        0b101 => &arithmetic::IMUL,
         _ => &UNIMPLEMENTED,
     }
 }
@@ -93,7 +95,8 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b00010000..=0b00010011 => &arithmetic::ADC_TO_REGISTER,
         0b00010100 | 0b00010101 => &arithmetic::ADC_IMMEDIATE_TO_ACCUMULATOR,
         0b01000000..=0b01000111 => &arithmetic::INC_REGISTER,
-        0b00110111 | 0b00100111 => &arithmetic::AAA_DAA,
+        0b00110111 => &arithmetic::AAA,
+        0b00100111 => &arithmetic::DAA,
         0b00101000..=0b00101011 => &arithmetic::SUB_FROM_REGISTER,
         0b00101100 | 0b00101101 => &arithmetic::SUB_IMMEDIATE_FROM_ACCUMULATOR,
         0b00011000..=0b00011011 => &arithmetic::SBB_FROM_REGISTER,
@@ -101,6 +104,8 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b01001000..=0b01001111 => &arithmetic::DEC_REGISTER,
         0b00111000..=0b00111011 => &arithmetic::CMP_WITH_REGISTER,
         0b00111100 | 0b00111101 => &arithmetic::CMP_IMMEDIATE_WITH_ACCUMULATOR,
+        0b00111111 => &arithmetic::AAS,
+        0b00101111 => &arithmetic::DAS,
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001
