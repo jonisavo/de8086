@@ -39,7 +39,7 @@ pub fn run(
 
     if writer_options.verbose && index < bytes.len() {
         print!(
-            "Warning: {} bytes were not parsed. Bytes:",
+            "; Warning: {} bytes were not parsed. Bytes:",
             bytes.len() - index,
         );
 

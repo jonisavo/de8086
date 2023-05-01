@@ -57,7 +57,7 @@ impl Writer {
         assert!(instruction.length <= 6, "Instruction length is too long.");
 
         for i in 0..instruction.length {
-            self.write_str(&format!("{:02x} ", instruction.input[i as usize]));
+            self.write_str(&format!("{:08b} ", instruction.input[i as usize]));
         }
 
         self.end_line();

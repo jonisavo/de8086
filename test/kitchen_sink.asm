@@ -187,6 +187,46 @@ sub ax, 1000
 sub al, -30
 sub al, 9
 
+sbb cx, [bp]
+sbb dx, [bx + si]
+sbb [bp + di + 5000], ah
+sbb [bx], al
+sbb sp, 392
+sbb si, 5
+sbb ax, 1000
+sbb ah, 30
+sbb al, 9
+sbb cx, bx
+sbb ch, al
+
+dec ax
+dec cx
+dec dh
+dec al
+dec ah
+dec sp
+dec di
+dec byte [bp + 1002]
+dec word [bx + 39]
+dec byte [bx + si + 5]
+dec word [bp + di - 10044]
+dec word [9349]
+dec byte [bp]
+
+neg ax
+neg cx
+neg dh
+neg al
+neg ah
+neg sp
+neg di
+neg byte [bp + 1002]
+neg word [bx + 39]
+neg byte [bx + si + 5]
+neg word [bp + di - 10044]
+neg word [9349]
+neg byte [bp]
+
 cmp bx, [bx+si]
 cmp bx, [bp]
 cmp si, 2

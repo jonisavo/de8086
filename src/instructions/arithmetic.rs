@@ -57,6 +57,29 @@ pub fn parse_immediate_to_accumulator(
     inst.description = description;
 }
 
+fn write_memory_or_register_instruction(writer: &mut Writer, inst: &Instruction) {
+    writer.start_instruction(inst);
+
+    if let RM::Eff(_) = inst.data_fields.rm {
+        if inst.fields.word {
+            writer.write_str("word ");
+        } else {
+            writer.write_str("byte ");
+        }
+    }
+
+    writer
+        .write_str(&inst.address_to_string(inst.data_fields.rm))
+        .end_line();
+}
+
+fn write_only_register_instruction(writer: &mut Writer, inst: &Instruction) {
+    writer
+        .start_instruction(inst)
+        .write_str(&inst.register.to_str())
+        .end_line();
+}
+
 pub const ADD_TO_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, "add", bytes, &ADD_TO_REGISTER),
     write_fn: |writer, inst| write_typical_instruction(writer, inst),
@@ -81,21 +104,7 @@ pub const ADC_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
 
 pub const INC_REGISTER_OR_MEMORY: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, "inc", bytes, &INC_REGISTER_OR_MEMORY),
-    write_fn: |writer, inst| {
-        writer.start_instruction(inst);
-
-        if let RM::Eff(_) = inst.data_fields.rm {
-            if inst.fields.word {
-                writer.write_str("word ");
-            } else {
-                writer.write_str("byte ");
-            }
-        }
-
-        writer
-            .write_str(&inst.address_to_string(inst.data_fields.rm))
-            .end_line();
-    },
+    write_fn: write_memory_or_register_instruction,
 };
 pub const INC_REGISTER: Description = Description {
     parse_fn: |bytes, inst| {
@@ -105,12 +114,7 @@ pub const INC_REGISTER: Description = Description {
         inst.fields.word = true;
         inst.description = &INC_REGISTER;
     },
-    write_fn: |writer, inst| {
-        writer
-            .start_instruction(inst)
-            .write_str(&inst.register.to_str())
-            .end_line();
-    },
+    write_fn: write_only_register_instruction,
 };
 
 pub const SUB_FROM_REGISTER: Description = Description {
@@ -122,6 +126,37 @@ pub const SUB_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
         parse_immediate_to_accumulator(inst, "sub", bytes, &SUB_IMMEDIATE_FROM_ACCUMULATOR)
     },
     write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
+
+pub const SBB_FROM_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "sbb", bytes, &SBB_FROM_REGISTER),
+    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+};
+pub const SBB_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_immediate_to_accumulator(inst, "sbb", bytes, &SBB_IMMEDIATE_FROM_ACCUMULATOR)
+    },
+    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+};
+
+pub const DEC_REGISTER_OR_MEMORY: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "dec", bytes, &DEC_REGISTER_OR_MEMORY),
+    write_fn: write_memory_or_register_instruction,
+};
+pub const DEC_REGISTER: Description = Description {
+    parse_fn: |bytes, inst| {
+        inst.mnemonic = "dec";
+        inst.length = 1;
+        inst.register = get_register(bytes[0] & 0b111);
+        inst.fields.word = true;
+        inst.description = &DEC_REGISTER;
+    },
+    write_fn: write_only_register_instruction,
+};
+
+pub const NEG: Description = Description {
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "neg", bytes, &NEG),
+    write_fn: write_memory_or_register_instruction,
 };
 
 pub const CMP_WITH_REGISTER: Description = Description {
