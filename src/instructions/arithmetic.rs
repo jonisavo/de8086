@@ -4,8 +4,8 @@ use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
         parse_bare_instruction, parse_typical_instruction, register, write_bare_instruction,
-        write_immediate_instruction, write_typical_instruction, InstRegister,
-        InstructionDataFields, InstructionFields, RM,
+        write_immediate_instruction, write_memory_or_register_instruction,
+        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields,
     },
     Description,
 };
@@ -56,22 +56,6 @@ pub fn parse_immediate_to_accumulator(
     inst.register = InstRegister::Reg(register::AX);
     inst.data = data;
     inst.description = description;
-}
-
-fn write_memory_or_register_instruction(writer: &mut Writer, inst: &Instruction) {
-    writer.start_instruction(inst);
-
-    if let RM::Eff(_) = inst.data_fields.rm {
-        if inst.fields.word {
-            writer.write_str("word ");
-        } else {
-            writer.write_str("byte ");
-        }
-    }
-
-    writer
-        .write_str(&inst.address_to_string(inst.data_fields.rm))
-        .end_line();
 }
 
 fn write_only_register_instruction(writer: &mut Writer, inst: &Instruction) {

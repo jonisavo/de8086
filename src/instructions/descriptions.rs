@@ -1,4 +1,4 @@
-use super::{arithmetic, data_transfer, instruction::Instruction, jumps, mov, push_pop};
+use super::{arithmetic, data_transfer, instruction::Instruction, jumps, logic, mov, push_pop};
 use crate::writer::Writer;
 use std::fmt::Debug;
 
@@ -34,10 +34,26 @@ pub const UNIMPLEMENTED: Description = Description {
     write_fn: unimplemented_write,
 };
 
+fn resolve_logic_bytes(bytes: &[u8]) -> &'static Description {
+    let opcode = bytes[1] >> 3;
+
+    match opcode & 0b111 {
+        0b000 => &logic::ROL,
+        0b001 => &logic::ROR,
+        0b010 => &logic::RCL,
+        0b011 => &logic::RCR,
+        0b100 => &logic::SHL,
+        0b101 => &logic::SHR,
+        0b111 => &logic::SAR,
+        _ => &UNIMPLEMENTED,
+    }
+}
+
 fn resolve_f6_or_f7_byte(bytes: &[u8]) -> &'static Description {
     let opcode = bytes[1] >> 3;
 
     match opcode & 0b111 {
+        0b010 => &logic::NOT,
         0b011 => &arithmetic::NEG,
         0b100 => &arithmetic::MUL,
         0b101 => &arithmetic::IMUL,
@@ -75,6 +91,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b10110000..=0b10111111 => &mov::IMMEDIATE_TO_REGISTER,
         0b10100000..=0b10100011 => &mov::MEMORY_TO_ACCUMULATOR,
         0b10001100 | 0b10001110 => &mov::TO_SEGMENT_REGISTER,
+        0b11010000..=0b11010011 => resolve_logic_bytes(bytes),
         0b11110110 | 0b11110111 => resolve_f6_or_f7_byte(bytes),
         0b11111110 => resolve_fe_byte(bytes),
         0b11111111 => resolve_ff_byte(bytes),

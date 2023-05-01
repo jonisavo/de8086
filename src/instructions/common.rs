@@ -373,3 +373,19 @@ pub fn parse_bare_instruction(
 pub fn write_bare_instruction(writer: &mut Writer, instruction: &Instruction) {
     writer.start_instruction(instruction).end_line();
 }
+
+pub fn write_memory_or_register_instruction(writer: &mut Writer, inst: &Instruction) {
+    writer.start_instruction(inst);
+
+    if let RM::Eff(_) = inst.data_fields.rm {
+        if inst.fields.word {
+            writer.write_str("word ");
+        } else {
+            writer.write_str("byte ");
+        }
+    }
+
+    writer
+        .write_str(&inst.address_to_string(inst.data_fields.rm))
+        .end_line();
+}
