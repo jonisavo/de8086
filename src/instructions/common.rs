@@ -336,12 +336,7 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
     if instruction.mnemonic == "mov" {
         writer.write_with_w_flag(instruction.data, instruction);
     } else {
-        let signed_data = if instruction.fields.word {
-            instruction.data as i16
-        } else {
-            instruction.data as i8 as i16
-        };
-        writer.write_str(&signed_data.to_string());
+        writer.write_data(instruction);
     }
 
     writer.end_line();

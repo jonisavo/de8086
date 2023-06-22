@@ -133,16 +133,28 @@ impl Writer {
         }
     }
 
-    pub fn write_with_size(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
+    pub fn write_size(&mut self, instruction: &Instruction) -> &mut Self {
         self.file_buffer.reserve(5);
 
-        let writer = if instruction.fields.word {
+        if instruction.fields.word {
             self.write(b"word ")
         } else {
             self.write(b"byte ")
-        };
+        }
+    }
 
-        writer.write_with_w_flag(value, instruction)
+    pub fn write_with_size(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
+        self.write_size(instruction)
+            .write_with_w_flag(value, instruction)
+    }
+
+    pub fn write_data(&mut self, instruction: &Instruction) -> &mut Self {
+        let signed_data = if instruction.fields.word {
+            instruction.data as i16
+        } else {
+            instruction.data as i8 as i16
+        };
+        self.write_str(&signed_data.to_string())
     }
 
     pub fn write_jump_displacement(&mut self, displacement: i8) -> &mut Self {

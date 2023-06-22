@@ -53,6 +53,7 @@ fn resolve_f6_or_f7_byte(bytes: &[u8]) -> &'static Description {
     let opcode = bytes[1] >> 3;
 
     match opcode & 0b111 {
+        0b000 => &logic::TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY,
         0b010 => &logic::NOT,
         0b011 => &arithmetic::NEG,
         0b100 => &arithmetic::MUL,
@@ -129,6 +130,14 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b11010101 => &arithmetic::AAD,
         0b10011000 => &arithmetic::CBW,
         0b10011001 => &arithmetic::CWD,
+        0b00100000..=0b00100011 => &logic::AND_WITH_REGISTER,
+        0b00100100 | 0b00100101 => &logic::AND_IMMEDIATE_FROM_ACCUMULATOR,
+        0b10000100..=0b10000111 => &logic::TEST_REGISTER_OR_MEMORY,
+        0b10101000 | 0b10101001 => &logic::TEST_IMMEDIATE_AND_ACCUMULATOR,
+        0b00001000..=0b00001011 => &logic::OR_WITH_REGISTER,
+        0b00001100 | 0b00001101 => &logic::OR_IMMEDIATE_TO_ACCUMULATOR,
+        0b00110000..=0b00110011 => &logic::XOR_WITH_REGISTER,
+        0b00110100 | 0b00110101 => &logic::XOR_IMMEDIATE_TO_ACCUMULATOR,
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001
