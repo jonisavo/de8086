@@ -367,6 +367,18 @@ xor cx, [4384]
 xor byte [bp - 39], 239
 xor word [bx + si - 4332], 10328
 
+rep movsb
+rep cmpsb
+rep scasb
+rep lodsb
+rep movsw
+rep cmpsw
+rep scasw
+rep lodsw
+
+rep stosb
+rep stosw
+
 ; Jumps
 test_label0:
 jnz test_label1

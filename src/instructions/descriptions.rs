@@ -1,4 +1,6 @@
-use super::{arithmetic, data_transfer, instruction::Instruction, jumps, logic, mov, push_pop};
+use super::{
+    arithmetic, data_transfer, instruction::Instruction, jumps, logic, mov, push_pop, strings,
+};
 use crate::writer::Writer;
 use std::fmt::Debug;
 
@@ -138,6 +140,12 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b00001100 | 0b00001101 => &logic::OR_IMMEDIATE_TO_ACCUMULATOR,
         0b00110000..=0b00110011 => &logic::XOR_WITH_REGISTER,
         0b00110100 | 0b00110101 => &logic::XOR_IMMEDIATE_TO_ACCUMULATOR,
+        0b11110010 | 0b11110011 => &strings::REPEAT,
+        0b10100100 | 0b10100101 => &strings::STRING_MANIPULATION, // movsb, movsw
+        0b10100110 | 0b10100111 => &strings::STRING_MANIPULATION, // cmpsb, cmpsw
+        0b10101110 | 0b10101111 => &strings::STRING_MANIPULATION, // scasb, scasw
+        0b10101100 | 0b10101101 => &strings::STRING_MANIPULATION, // lodsb, lodsw
+        0b10101010 | 0b10101011 => &strings::STRING_MANIPULATION, // stosb, stosw
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001

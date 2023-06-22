@@ -12,14 +12,14 @@ use super::{
 };
 
 pub const DATA_TRANSFER_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
-    0b11010111u8 => "xlat",
-    0b10001101u8 => "lea",
-    0b11000101u8 => "lds",
-    0b11000100u8 => "les",
-    0b10011111u8 => "lahf",
-    0b10011110u8 => "sahf",
-    0b10011100u8 => "pushf",
-    0b10011101u8 => "popf",
+    0b11010111_u8 => "xlat",
+    0b10001101_u8 => "lea",
+    0b11000101_u8 => "lds",
+    0b11000100_u8 => "les",
+    0b10011111_u8 => "lahf",
+    0b10011110_u8 => "sahf",
+    0b10011100_u8 => "pushf",
+    0b10011101_u8 => "popf",
 };
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {

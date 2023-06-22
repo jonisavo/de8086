@@ -8,3 +8,4 @@ pub mod jumps;
 pub mod logic;
 pub mod mov;
 pub mod push_pop;
+pub mod strings;

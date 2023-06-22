@@ -20,6 +20,11 @@ pub struct WriterOptions {
     pub verbose: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct WriterContext {
+    repeat: u8,
+}
+
 pub struct Writer {
     file_buffer: Vec<u8>,
     next_instruction_byte_index: usize,
@@ -28,6 +33,7 @@ pub struct Writer {
     label_map: HashMap<usize, Label>,
     current_instruction: Option<WrittenInstruction>,
     options: WriterOptions,
+    context: WriterContext,
 }
 
 impl Writer {
@@ -48,13 +54,22 @@ impl Writer {
             label_map,
             current_instruction: None,
             options,
+            context: WriterContext { repeat: 0 },
         }
+    }
+
+    pub fn set_repeat_prefix(&mut self, byte: u8) {
+        self.context.repeat = byte;
     }
 
     fn write_instruction_input(&mut self, instruction: &Instruction) {
         self.write_str("; ");
 
         assert!(instruction.length <= 6, "Instruction length is too long.");
+
+        if self.context.repeat != 0 {
+            self.write_str(&format!("{:08b} ", self.context.repeat));
+        }
 
         for i in 0..instruction.length {
             self.write_str(&format!("{:08b} ", instruction.input[i as usize]));
@@ -88,6 +103,11 @@ impl Writer {
         };
 
         self.instruction_buffer.push(written_instruction);
+
+        if self.context.repeat != 0 {
+            self.write_str("rep ");
+            self.context.repeat = 0;
+        }
 
         self.write_str(instruction.mnemonic).write_byte(b' ');
 
