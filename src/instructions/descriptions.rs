@@ -88,6 +88,8 @@ fn resolve_ff_byte(bytes: &[u8]) -> &'static Description {
 }
 
 pub fn resolve(bytes: &[u8]) -> &'static Description {
+    assert!(bytes.len() > 0, "Cannot resolve instruction with no bytes.");
+
     match bytes[0] {
         0b10001000..=0b10001011 => &mov::TO_REGISTER,
         0b11000110 | 0b11000111 => &mov::IMMEDIATE_TO_MEMORY,
