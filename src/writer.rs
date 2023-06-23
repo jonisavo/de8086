@@ -168,7 +168,7 @@ impl Writer {
             .write_with_w_flag(value, instruction)
     }
 
-    pub fn write_data(&mut self, instruction: &Instruction) -> &mut Self {
+    pub fn write_signed_data(&mut self, instruction: &Instruction) -> &mut Self {
         let signed_data = if instruction.fields.word {
             instruction.data as i16
         } else {

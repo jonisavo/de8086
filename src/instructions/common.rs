@@ -336,7 +336,7 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
     if instruction.mnemonic == "mov" {
         writer.write_with_w_flag(instruction.data, instruction);
     } else {
-        writer.write_data(instruction);
+        writer.write_signed_data(instruction);
     }
 
     writer.end_line();

@@ -379,6 +379,16 @@ rep lodsw
 rep stosb
 rep stosw
 
+; why is this not working? nasm outputs something else than 11500.
+; call 11500
+call [39201]
+call [bp - 100]
+call sp
+call ax
+call 123:456
+call [bp+si-0x3a]
+call far [bp+si-0x3a]
+
 ; Jumps
 test_label0:
 jnz test_label1

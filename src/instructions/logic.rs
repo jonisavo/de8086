@@ -111,7 +111,7 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
         writer
             .write_str(&instruction.destination_string())
             .write_comma_separator()
-            .write_data(instruction)
+            .write_signed_data(instruction)
             .end_line();
     },
 };
