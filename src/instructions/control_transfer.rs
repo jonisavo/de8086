@@ -39,10 +39,6 @@ fn write_direct_within_segment(writer: &mut Writer, instruction: &Instruction) {
         .end_line();
 }
 
-fn parse_direct_intersegment(_bytes: &[u8], inst: &mut Instruction) {
-    inst.length = 5;
-}
-
 fn write_direct_intersegment(writer: &mut Writer, instruction: &Instruction) {
     let ip = (instruction.input[2] as u16) << 8 | instruction.input[1] as u16;
     let cs = (instruction.input[4] as u16) << 8 | instruction.input[3] as u16;
@@ -70,16 +66,31 @@ fn write_conditional_jump(writer: &mut Writer, instruction: &Instruction) {
         .end_line();
 }
 
-pub const CALL_DIRECT_WITHIN_SEGMENT: Description = Description {
+const CONTROL_TRANSFER_MNEMONICS: [&str; 2] = ["call", "jmp"];
+
+pub const DIRECT_WITHIN_SEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
-        inst.mnemonic = "call";
         parse_direct_within_segment(bytes, inst);
+        inst.mnemonic = CONTROL_TRANSFER_MNEMONICS[(bytes[0] & 0b1) as usize];
     },
     write_fn: write_direct_within_segment,
 };
 
-pub const CALL_INDIRECT_WITHIN_SEGMENT: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "call", bytes),
+pub const JUMP_DIRECT_WITHIN_SEGMENT_SHORT: Description = Description {
+    parse_fn: |bytes, inst| {
+        inst.length = 2;
+        inst.disp = get_disp_value(bytes, 1, 1);
+        inst.mnemonic = "jmp";
+    },
+    write_fn: write_direct_within_segment,
+};
+
+pub const INDIRECT_WITHIN_SEGMENT: Description = Description {
+    parse_fn: |bytes, inst| {
+        let fifth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
+        let mnemonic = CONTROL_TRANSFER_MNEMONICS[fifth_bit_set as usize];
+        parse_typical_instruction(inst, mnemonic, bytes);
+    },
     write_fn: |writer, inst| {
         writer
             .start_instruction(inst)
@@ -88,16 +99,22 @@ pub const CALL_INDIRECT_WITHIN_SEGMENT: Description = Description {
     },
 };
 
-pub const CALL_DIRECT_INTERSEGMENT: Description = Description {
+pub const DIRECT_INTERSEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
-        inst.mnemonic = "call";
-        parse_direct_intersegment(bytes, inst);
+        let three_high_bits_set = (bytes[0] >> 5) == 0b111;
+        let mnemonic = CONTROL_TRANSFER_MNEMONICS[three_high_bits_set as usize];
+        inst.mnemonic = mnemonic;
+        inst.length = 5;
     },
     write_fn: write_direct_intersegment,
 };
 
-pub const CALL_INDIRECT_INTERSEGMENT: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "call", bytes),
+pub const INDIRECT_INTERSEGMENT: Description = Description {
+    parse_fn: |bytes, inst| {
+        let fifth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
+        let mnemonic = CONTROL_TRANSFER_MNEMONICS[fifth_bit_set as usize];
+        parse_typical_instruction(inst, mnemonic, bytes);
+    },
     write_fn: |writer, inst| {
         writer
             .start_instruction(inst)

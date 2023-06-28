@@ -83,8 +83,8 @@ fn resolve_ff_byte(bytes: &[u8]) -> &'static Description {
     match opcode & 0b111 {
         0b000 => &arithmetic::INC_REGISTER_OR_MEMORY,
         0b001 => &arithmetic::DEC_REGISTER_OR_MEMORY,
-        0b010 => &control_transfer::CALL_INDIRECT_WITHIN_SEGMENT,
-        0b011 => &control_transfer::CALL_INDIRECT_INTERSEGMENT,
+        0b010 | 0b100 => &control_transfer::INDIRECT_WITHIN_SEGMENT,
+        0b011 | 0b101 => &control_transfer::INDIRECT_INTERSEGMENT,
         0b110 => &push_pop::PUSH_POP_REGISTER_OR_MEMORY,
         _ => &UNIMPLEMENTED,
     }
@@ -151,8 +151,9 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b10101110 | 0b10101111 => &strings::STRING_MANIPULATION, // scasb, scasw
         0b10101100 | 0b10101101 => &strings::STRING_MANIPULATION, // lodsb, lodsw
         0b10101010 | 0b10101011 => &strings::STRING_MANIPULATION, // stosb, stosw
-        0b11101000 => &control_transfer::CALL_DIRECT_WITHIN_SEGMENT,
-        0b10011010 => &control_transfer::CALL_DIRECT_INTERSEGMENT,
+        0b11101000 | 0b11101001 => &control_transfer::DIRECT_WITHIN_SEGMENT,
+        0b11101011 => &control_transfer::JUMP_DIRECT_WITHIN_SEGMENT_SHORT,
+        0b10011010 | 0b11101010 => &control_transfer::DIRECT_INTERSEGMENT,
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001
