@@ -154,6 +154,8 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b11101000 | 0b11101001 => &control_transfer::DIRECT_WITHIN_SEGMENT,
         0b11101011 => &control_transfer::JUMP_DIRECT_WITHIN_SEGMENT_SHORT,
         0b10011010 | 0b11101010 => &control_transfer::DIRECT_INTERSEGMENT,
+        0b11000011 | 0b11001011 => &control_transfer::RETURN_NO_VALUE,
+        0b11000010 | 0b11001010 => &control_transfer::RETURN_WITH_VALUE,
         0b01110100 | 0b01111100 | 0b01111110 | 0b01110010 | 0b01110110 | 0b01111010
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001

@@ -2,7 +2,11 @@ use phf::{phf_map, Map};
 
 use crate::{writer::Writer, Instruction};
 
-use super::{common::get_disp_value, common::parse_typical_instruction, Description};
+use super::{
+    common::parse_typical_instruction,
+    common::{get_disp_value, parse_bare_instruction, write_bare_instruction},
+    Description,
+};
 
 pub const CONDITIONAL_JUMP_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
     0b01110100_u8 => "je",
@@ -87,8 +91,8 @@ pub const JUMP_DIRECT_WITHIN_SEGMENT_SHORT: Description = Description {
 
 pub const INDIRECT_WITHIN_SEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
-        let fifth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
-        let mnemonic = CONTROL_TRANSFER_MNEMONICS[fifth_bit_set as usize];
+        let sixth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
+        let mnemonic = CONTROL_TRANSFER_MNEMONICS[sixth_bit_set as usize];
         parse_typical_instruction(inst, mnemonic, bytes);
     },
     write_fn: |writer, inst| {
@@ -111,8 +115,8 @@ pub const DIRECT_INTERSEGMENT: Description = Description {
 
 pub const INDIRECT_INTERSEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
-        let fifth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
-        let mnemonic = CONTROL_TRANSFER_MNEMONICS[fifth_bit_set as usize];
+        let sixth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
+        let mnemonic = CONTROL_TRANSFER_MNEMONICS[sixth_bit_set as usize];
         parse_typical_instruction(inst, mnemonic, bytes);
     },
     write_fn: |writer, inst| {
@@ -127,4 +131,29 @@ pub const INDIRECT_INTERSEGMENT: Description = Description {
 pub const CONDITIONAL_JUMP: Description = Description {
     parse_fn: parse_conditional_jump,
     write_fn: write_conditional_jump,
+};
+
+const RET_MNEMONICS: [&str; 2] = ["ret", "retf"];
+
+fn get_ret_mnemonic(bytes: &[u8]) -> &'static str {
+    let fourth_bit_set = ((bytes[0] >> 3) & 0b1) == 0b1;
+    RET_MNEMONICS[fourth_bit_set as usize]
+}
+
+pub const RETURN_NO_VALUE: Description = Description {
+    parse_fn: |bytes, inst| parse_bare_instruction(inst, get_ret_mnemonic(bytes)),
+    write_fn: write_bare_instruction,
+};
+pub const RETURN_WITH_VALUE: Description = Description {
+    parse_fn: |bytes, inst| {
+        inst.length = 3;
+        inst.mnemonic = get_ret_mnemonic(bytes);
+        inst.disp = get_disp_value(bytes, 2, 1);
+    },
+    write_fn: |writer, inst| {
+        writer
+            .start_instruction(inst)
+            .write_str(inst.disp.to_string().as_str())
+            .end_line();
+    },
 };

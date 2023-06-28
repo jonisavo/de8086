@@ -403,6 +403,14 @@ jmp [di]
 jmp far [di]
 jmp 21862:30600
 
+ret -7
+ret 500
+ret
+retf 17556
+ret 17560
+retf
+ret
+
 test_label0:
 jnz test_label1
 jnz test_label0
