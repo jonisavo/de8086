@@ -444,3 +444,15 @@ int 13
 int3
 into
 iret
+
+; Processor control
+
+clc
+cmc
+stc
+cld
+std
+cli
+sti
+hlt
+wait

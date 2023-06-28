@@ -2,7 +2,7 @@ use super::{
     arithmetic, control_transfer, data_transfer, instruction::Instruction, logic, mov, push_pop,
     strings,
 };
-use crate::writer::Writer;
+use crate::{instructions::processor_control, writer::Writer};
 use std::fmt::Debug;
 
 pub struct Description {
@@ -161,6 +161,8 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001
         | 0b11100000 | 0b11100011 => &control_transfer::CONDITIONAL_JUMP,
         0b11001100..=0b11001111 => &control_transfer::INTERRUPT,
+        0b11111000 | 0b11110101 | 0b11111001 | 0b11111100 | 0b11111101 | 0b11111010
+        | 0b11111011 | 0b11110100 | 0b10011011 => &processor_control::PROCESSOR_CONTROL,
         _ => &UNIMPLEMENTED,
     }
 }
