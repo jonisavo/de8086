@@ -160,6 +160,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         | 0b01110000 | 0b01111000 | 0b01110101 | 0b01111101 | 0b01111111 | 0b01110011
         | 0b01110111 | 0b01111011 | 0b01110001 | 0b01111001 | 0b11100010 | 0b11100001
         | 0b11100000 | 0b11100011 => &control_transfer::CONDITIONAL_JUMP,
+        0b11001100..=0b11001111 => &control_transfer::INTERRUPT,
         _ => &UNIMPLEMENTED,
     }
 }

@@ -157,3 +157,25 @@ pub const RETURN_WITH_VALUE: Description = Description {
             .end_line();
     },
 };
+
+const INTERRUPT_MNEMONICS: [&str; 4] = ["int3", "int", "into", "iret"];
+
+pub const INTERRUPT: Description = Description {
+    parse_fn: |bytes, inst| {
+        let interrupt_opcode = bytes[0] & 0b11;
+        let has_data = interrupt_opcode == 1;
+
+        inst.mnemonic = INTERRUPT_MNEMONICS[interrupt_opcode as usize];
+        inst.length = 1 + has_data as u8;
+        inst.data = has_data as u16 * bytes[has_data as usize] as u16;
+    },
+    write_fn: |writer, inst| {
+        writer.start_instruction(inst);
+
+        if (inst.data as u8) != 0 {
+            writer.write_str(inst.data.to_string().as_str());
+        }
+
+        writer.end_line();
+    },
+};
