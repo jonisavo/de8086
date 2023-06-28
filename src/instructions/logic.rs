@@ -32,53 +32,49 @@ pub fn write_logic_instruction(writer: &mut Writer, inst: &Instruction) {
 }
 
 pub const NOT: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "not", bytes, &NOT),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "not", bytes),
     write_fn: write_memory_or_register_instruction,
 };
 pub const SHL: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "shl", bytes, &SHL),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "shl", bytes),
     write_fn: write_logic_instruction,
 };
 pub const SHR: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "shr", bytes, &SHR),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "shr", bytes),
     write_fn: write_logic_instruction,
 };
 pub const SAR: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "sar", bytes, &SAR),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "sar", bytes),
     write_fn: write_logic_instruction,
 };
 pub const ROL: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rol", bytes, &ROL),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rol", bytes),
     write_fn: write_logic_instruction,
 };
 pub const ROR: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "ror", bytes, &ROR),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "ror", bytes),
     write_fn: write_logic_instruction,
 };
 pub const RCL: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rcl", bytes, &RCL),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rcl", bytes),
     write_fn: write_logic_instruction,
 };
 pub const RCR: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rcr", bytes, &RCR),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "rcr", bytes),
     write_fn: write_logic_instruction,
 };
 
 pub const AND_WITH_REGISTER: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "and", bytes, &AND_WITH_REGISTER),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "and", bytes),
     write_fn: write_typical_instruction,
 };
 pub const AND_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_immediate_to_accumulator(inst, "and", bytes, &AND_IMMEDIATE_FROM_ACCUMULATOR)
-    },
+    parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, "and", bytes),
     write_fn: write_immediate_instruction,
 };
 
 pub const TEST_REGISTER_OR_MEMORY: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_typical_instruction(inst, "test", bytes, &TEST_REGISTER_OR_MEMORY)
-    },
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "test", bytes),
     write_fn: write_typical_instruction,
 };
 pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
@@ -98,7 +94,6 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
         inst.data_fields = InstructionDataFields::parse(bytes[1]);
         inst.disp = get_disp_value(&bytes, displacement, 2);
         inst.data = data;
-        inst.description = &TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY;
     },
     write_fn: |writer, instruction| {
         writer.start_instruction(instruction);
@@ -116,30 +111,24 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
     },
 };
 pub const TEST_IMMEDIATE_AND_ACCUMULATOR: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_immediate_to_accumulator(inst, "test", bytes, &TEST_IMMEDIATE_AND_ACCUMULATOR)
-    },
+    parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, "test", bytes),
     write_fn: write_immediate_instruction,
 };
 
 pub const OR_WITH_REGISTER: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "or", bytes, &OR_WITH_REGISTER),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "or", bytes),
     write_fn: write_typical_instruction,
 };
 pub const OR_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_immediate_to_accumulator(inst, "or", bytes, &OR_IMMEDIATE_TO_ACCUMULATOR)
-    },
+    parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, "or", bytes),
     write_fn: write_immediate_instruction,
 };
 
 pub const XOR_WITH_REGISTER: Description = Description {
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "xor", bytes, &XOR_WITH_REGISTER),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "xor", bytes),
     write_fn: write_typical_instruction,
 };
 pub const XOR_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_immediate_to_accumulator(inst, "xor", bytes, &XOR_IMMEDIATE_TO_ACCUMULATOR)
-    },
+    parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, "xor", bytes),
     write_fn: write_immediate_instruction,
 };

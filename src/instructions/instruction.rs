@@ -46,14 +46,17 @@ impl Instruction {
         let description = resolve(bytes);
         description.parse(bytes, &mut instruction);
 
-        if instruction.length != 0 {
-            for i in 0..instruction.length as usize {
-                instruction.input[i] = bytes[i];
-            }
-            Some(instruction)
-        } else {
-            None
+        if instruction.length == 0 {
+            return None;
         }
+
+        for i in 0..instruction.length as usize {
+            instruction.input[i] = bytes[i];
+        }
+
+        instruction.description = description;
+
+        Some(instruction)
     }
 
     pub fn write(&self, writer: &mut Writer) {

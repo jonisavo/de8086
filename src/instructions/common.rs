@@ -1,7 +1,5 @@
 use crate::{writer::Writer, Instruction};
 
-use super::Description;
-
 pub mod mode {
     pub const MEMORY_MODE: u8 = 0b00;
     pub const BYTE_DISPLACEMENT: u8 = 0b01;
@@ -310,12 +308,7 @@ pub fn write_typical_instruction(writer: &mut Writer, instruction: &Instruction)
         .end_line();
 }
 
-pub fn parse_typical_instruction(
-    inst: &mut Instruction,
-    mnemonic: &'static str,
-    bytes: &[u8],
-    description: &'static Description,
-) {
+pub fn parse_typical_instruction(inst: &mut Instruction, mnemonic: &'static str, bytes: &[u8]) {
     let displacement = get_displacement_amount(bytes[1]);
 
     inst.mnemonic = mnemonic;
@@ -324,7 +317,6 @@ pub fn parse_typical_instruction(
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
     inst.disp = get_disp_value(&bytes, displacement, 2);
-    inst.description = description;
 }
 
 pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instruction) {
@@ -342,29 +334,25 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
     writer.end_line();
 }
 
+#[inline]
 pub fn create_single_byte_instruction(
     inst: &mut Instruction,
     mnemonic: &'static str,
-    description: &'static Description,
     register: InstRegister,
 ) {
     inst.mnemonic = mnemonic;
     inst.length = 1;
     inst.fields = InstructionFields::SET;
     inst.register = register;
-    inst.description = description;
 }
 
-pub fn parse_bare_instruction(
-    inst: &mut Instruction,
-    mnemonic: &'static str,
-    description: &'static Description,
-) {
+#[inline]
+pub fn parse_bare_instruction(inst: &mut Instruction, mnemonic: &'static str) {
     inst.mnemonic = mnemonic;
     inst.length = 1;
-    inst.description = description;
 }
 
+#[inline]
 pub fn write_bare_instruction(writer: &mut Writer, instruction: &Instruction) {
     writer.start_instruction(instruction).end_line();
 }

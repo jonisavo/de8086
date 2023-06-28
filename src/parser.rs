@@ -1,5 +1,4 @@
 use crate::instructions::instruction::Instruction;
-use crate::instructions::resolve;
 use std::error::Error;
 use std::fmt;
 
@@ -48,18 +47,7 @@ impl Iterator for Parser<'_> {
 
         let remaining_bytes_slice = &self.bytes[self.current_index..];
 
-        self.instruction = Instruction::EMPTY;
-        self.instruction.input = [0; 6];
-        let description = resolve(remaining_bytes_slice);
-        description.parse(remaining_bytes_slice, &mut self.instruction);
-
-        if self.instruction.length == 0 {
-            return None;
-        }
-
-        for i in 0..self.instruction.length {
-            self.instruction.input[i as usize] = remaining_bytes_slice[i as usize];
-        }
+        self.instruction = Instruction::parse(remaining_bytes_slice)?;
 
         self.current_index += self.instruction.length as usize;
 

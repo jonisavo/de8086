@@ -32,7 +32,6 @@ pub fn parse_mov_immediate_to_memory(bytes: &[u8], inst: &mut Instruction) {
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
     inst.disp = get_disp_value(&bytes, displacement, 2);
     inst.data = data;
-    inst.description = &IMMEDIATE_TO_MEMORY;
 }
 
 pub fn parse_mov_immediate_to_register(bytes: &[u8], inst: &mut Instruction) {
@@ -45,7 +44,6 @@ pub fn parse_mov_immediate_to_register(bytes: &[u8], inst: &mut Instruction) {
     inst.fields = fields;
     inst.register = get_register(bytes[0]);
     inst.data = data;
-    inst.description = &IMMEDIATE_TO_REGISTER;
 }
 
 pub fn parse_mov_memory_to_accumulator(bytes: &[u8], inst: &mut Instruction) {
@@ -58,18 +56,17 @@ pub fn parse_mov_memory_to_accumulator(bytes: &[u8], inst: &mut Instruction) {
     inst.register = InstRegister::Reg(register::AX);
     inst.data_fields = InstructionDataFields::DIRECT_ADDRESS;
     inst.disp = get_disp_value(bytes, 2, 1);
-    inst.description = &MEMORY_TO_ACCUMULATOR;
 }
 
 pub fn parse_mov_to_segment_register(bytes: &[u8], inst: &mut Instruction) {
-    parse_typical_instruction(inst, "mov", bytes, &TO_SEGMENT_REGISTER);
+    parse_typical_instruction(inst, "mov", bytes);
 
     inst.register = get_segment_register(bytes[1] >> 3);
     inst.fields.word = true;
 }
 
 pub const TO_REGISTER: Description = Description {
-    parse_fn: |b, inst| parse_typical_instruction(inst, "mov", b, &TO_REGISTER),
+    parse_fn: |b, inst| parse_typical_instruction(inst, "mov", b),
     write_fn: |writer, inst| write_typical_instruction(writer, inst),
 };
 pub const IMMEDIATE_TO_MEMORY: Description = Description {

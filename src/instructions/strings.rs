@@ -19,7 +19,7 @@ pub const STRING_MANIPULATION_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
 };
 
 pub const REPEAT: Description = Description {
-    parse_fn: |_, inst| parse_bare_instruction(inst, "rep", &REPEAT),
+    parse_fn: |_, inst| parse_bare_instruction(inst, "rep"),
     write_fn: |writer, instruction| {
         writer.set_repeat_prefix(instruction.input[0]);
     },
@@ -27,11 +27,7 @@ pub const REPEAT: Description = Description {
 
 pub const STRING_MANIPULATION: Description = Description {
     parse_fn: |bytes, inst| {
-        parse_bare_instruction(
-            inst,
-            STRING_MANIPULATION_MNEMONIC_MAP[&bytes[0]],
-            &STRING_MANIPULATION,
-        )
+        parse_bare_instruction(inst, STRING_MANIPULATION_MNEMONIC_MAP[&bytes[0]])
     },
     write_fn: write_bare_instruction,
 };

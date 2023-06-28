@@ -24,16 +24,14 @@ pub const DATA_TRANSFER_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {
     write_fn: write_typical_instruction,
-    parse_fn: |bytes, inst| {
-        parse_typical_instruction(inst, "xchg", bytes, &XCHG_MEMORY_WITH_REGISTER)
-    },
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "xchg", bytes),
 };
 pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
     write_fn: write_typical_instruction,
     parse_fn: |bytes, inst| {
         let register = get_register(bytes[0]);
 
-        create_single_byte_instruction(inst, "xchg", &XCHG_REGISTER_WITH_ACCUMULATOR, register);
+        create_single_byte_instruction(inst, "xchg", register);
 
         // Accumulator is the destination, source is the register
         inst.fields.direction = false;
@@ -92,7 +90,6 @@ pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
     inst.fields = InstructionFields::parse(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
     inst.data = bytes[1] as u16;
-    inst.description = &IN_OUT_FIXED_PORT;
 }
 
 pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
@@ -103,7 +100,6 @@ pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
     inst.length = 1;
     inst.fields = InstructionFields::parse(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
-    inst.description = &IN_OUT_VARIABLE_PORT;
 }
 
 pub const IN_OUT_FIXED_PORT: Description = Description {
@@ -118,7 +114,7 @@ pub const IN_OUT_VARIABLE_PORT: Description = Description {
 pub const LEA_LDS_LES: Description = Description {
     parse_fn: |bytes, inst| {
         let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
-        parse_typical_instruction(inst, mnemonic, bytes, &LEA_LDS_LES);
+        parse_typical_instruction(inst, mnemonic, bytes);
         inst.fields.direction = true;
         inst.fields.word = true;
     },
@@ -130,7 +126,6 @@ pub const OTHER_DATA_TRANSFER: Description = Description {
         let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
         inst.mnemonic = mnemonic;
         inst.length = 1;
-        inst.description = &OTHER_DATA_TRANSFER;
     },
     write_fn: write_bare_instruction,
 };

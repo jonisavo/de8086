@@ -61,7 +61,6 @@ fn parse_conditional_jump(bytes: &[u8], inst: &mut Instruction) {
     inst.mnemonic = CONDITIONAL_JUMP_MNEMONIC_MAP.get(&byte).unwrap();
     inst.length = 2;
     inst.disp = get_disp_value(bytes, 1, 1);
-    inst.description = &CONDITIONAL_JUMP;
 }
 
 fn write_conditional_jump(writer: &mut Writer, instruction: &Instruction) {
@@ -75,15 +74,12 @@ pub const CALL_DIRECT_WITHIN_SEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         inst.mnemonic = "call";
         parse_direct_within_segment(bytes, inst);
-        inst.description = &CALL_DIRECT_WITHIN_SEGMENT;
     },
     write_fn: write_direct_within_segment,
 };
 
 pub const CALL_INDIRECT_WITHIN_SEGMENT: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_typical_instruction(inst, "call", bytes, &CALL_INDIRECT_WITHIN_SEGMENT)
-    },
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "call", bytes),
     write_fn: |writer, inst| {
         writer
             .start_instruction(inst)
@@ -96,15 +92,12 @@ pub const CALL_DIRECT_INTERSEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         inst.mnemonic = "call";
         parse_direct_intersegment(bytes, inst);
-        inst.description = &CALL_DIRECT_INTERSEGMENT;
     },
     write_fn: write_direct_intersegment,
 };
 
 pub const CALL_INDIRECT_INTERSEGMENT: Description = Description {
-    parse_fn: |bytes, inst| {
-        parse_typical_instruction(inst, "call", bytes, &CALL_INDIRECT_INTERSEGMENT)
-    },
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, "call", bytes),
     write_fn: |writer, inst| {
         writer
             .start_instruction(inst)
