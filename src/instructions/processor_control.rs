@@ -23,3 +23,10 @@ pub const PROCESSOR_CONTROL: Description = Description {
     },
     write_fn: write_bare_instruction,
 };
+
+pub const LOCK: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, "lock"),
+    write_fn: |writer, _| {
+        writer.set_lock_prefix();
+    },
+};

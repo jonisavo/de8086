@@ -163,6 +163,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b11001100..=0b11001111 => &control_transfer::INTERRUPT,
         0b11111000 | 0b11110101 | 0b11111001 | 0b11111100 | 0b11111101 | 0b11111010
         | 0b11111011 | 0b11110100 | 0b10011011 => &processor_control::PROCESSOR_CONTROL,
+        0b11110000 => &processor_control::LOCK,
         _ => &UNIMPLEMENTED,
     }
 }

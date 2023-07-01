@@ -23,6 +23,7 @@ pub struct WriterOptions {
 #[derive(Debug, Clone)]
 pub struct WriterContext {
     repeat: u8,
+    lock: bool,
 }
 
 pub struct Writer {
@@ -54,7 +55,10 @@ impl Writer {
             label_map,
             current_instruction: None,
             options,
-            context: WriterContext { repeat: 0 },
+            context: WriterContext {
+                repeat: 0,
+                lock: false,
+            },
         }
     }
 
@@ -62,10 +66,18 @@ impl Writer {
         self.context.repeat = byte;
     }
 
+    pub fn set_lock_prefix(&mut self) {
+        self.context.lock = true;
+    }
+
     fn write_instruction_input(&mut self, instruction: &Instruction) {
         self.write_str("; ");
 
         assert!(instruction.length <= 6, "Instruction length is too long.");
+
+        if self.context.lock {
+            self.write_str(&format!("{:00b} ", 0b11110000));
+        }
 
         if self.context.repeat != 0 {
             self.write_str(&format!("{:08b} ", self.context.repeat));
@@ -103,6 +115,11 @@ impl Writer {
         };
 
         self.instruction_buffer.push(written_instruction);
+
+        if self.context.lock {
+            self.write_str("lock ");
+            self.context.lock = false;
+        }
 
         if self.context.repeat != 0 {
             self.write_str("rep ");
