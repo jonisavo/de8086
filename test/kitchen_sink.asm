@@ -50,6 +50,8 @@ mov es, [1234]
 mov [1234], ss
 mov ax, ds
 
+mov [bx+si+59],es
+
 push word [bp + si]
 push word [3000]
 push word [bx + di - 30]
