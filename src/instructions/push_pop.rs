@@ -31,7 +31,7 @@ pub fn write_push_or_pop(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
         .write_str("word ")
-        .write_str(&instruction.destination_string())
+        .write_destination(instruction)
         .end_line();
 }
 

@@ -13,7 +13,7 @@ use super::{
 pub fn write_mov_immediate_to_memory(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
-        .write_str(&instruction.address_to_string(instruction.data_fields.rm))
+        .write_rm(instruction)
         .write_comma_separator()
         .write_with_size(instruction.data, instruction)
         .end_line();

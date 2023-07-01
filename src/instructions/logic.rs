@@ -25,7 +25,7 @@ pub fn write_logic_instruction(writer: &mut Writer, inst: &Instruction) {
     let count_str = if inst.fields.shift_rotate { "cl" } else { "1" };
 
     writer
-        .write_str(&inst.address_to_string(inst.data_fields.rm))
+        .write_rm(inst)
         .write_comma_separator()
         .write_str(count_str)
         .end_line();
@@ -104,7 +104,7 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
         };
 
         writer
-            .write_str(&instruction.destination_string())
+            .write_destination(instruction)
             .write_comma_separator()
             .write_signed_data(instruction)
             .end_line();

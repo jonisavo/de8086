@@ -302,9 +302,9 @@ fn test_instruction_data_fields_parse() {
 pub fn write_typical_instruction(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
-        .write_str(&instruction.destination_string())
+        .write_destination(instruction)
         .write_comma_separator()
-        .write_str(&instruction.source_string())
+        .write_source(instruction)
         .end_line();
 }
 
@@ -322,7 +322,7 @@ pub fn parse_typical_instruction(inst: &mut Instruction, mnemonic: &'static str,
 pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
-        .write_str(&instruction.destination_string())
+        .write_destination(instruction)
         .write_comma_separator();
 
     if instruction.mnemonic == "mov" {
@@ -368,7 +368,5 @@ pub fn write_memory_or_register_instruction(writer: &mut Writer, inst: &Instruct
         }
     }
 
-    writer
-        .write_str(&inst.address_to_string(inst.data_fields.rm))
-        .end_line();
+    writer.write_rm(inst).end_line();
 }

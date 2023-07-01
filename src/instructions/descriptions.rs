@@ -164,6 +164,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b11111000 | 0b11110101 | 0b11111001 | 0b11111100 | 0b11111101 | 0b11111010
         | 0b11111011 | 0b11110100 | 0b10011011 => &processor_control::PROCESSOR_CONTROL,
         0b11110000 => &processor_control::LOCK,
+        0b00100110 | 0b00101110 | 0b00110110 | 0b00111110 => &processor_control::SEGMENT_OVERRIDE,
         _ => &UNIMPLEMENTED,
     }
 }

@@ -1,7 +1,7 @@
 use phf::{phf_map, Map};
 
 use super::{
-    common::{parse_bare_instruction, write_bare_instruction},
+    common::{parse_bare_instruction, write_bare_instruction, InstRegister},
     Description,
 };
 
@@ -28,5 +28,16 @@ pub const LOCK: Description = Description {
     parse_fn: |_, inst| parse_bare_instruction(inst, "lock"),
     write_fn: |writer, _| {
         writer.set_lock_prefix();
+    },
+};
+
+pub const SEGMENT_OVERRIDE: Description = Description {
+    parse_fn: |bytes, inst| {
+        parse_bare_instruction(inst, "segment");
+        let seg_reg = (bytes[0] >> 3) & 0b11;
+        inst.register = InstRegister::SegReg(seg_reg)
+    },
+    write_fn: |writer, inst| {
+        writer.set_segment_prefix(inst.register.into());
     },
 };

@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 
-use crate::Instruction;
+use crate::{
+    instructions::common::{
+        effective, mode, InstRegister, BYTE_REGISTER_STRINGS, EFFECTIVE_ADDRESS_STRINGS, RM,
+        SEGMENT_REGISTER_STRINGS, WORD_REGISTER_STRINGS,
+    },
+    Instruction,
+};
 
 #[derive(Debug, Copy, Clone)]
 struct WrittenInstruction {
@@ -24,6 +30,7 @@ pub struct WriterOptions {
 pub struct WriterContext {
     repeat: u8,
     lock: bool,
+    segment: u8,
 }
 
 pub struct Writer {
@@ -58,6 +65,8 @@ impl Writer {
             context: WriterContext {
                 repeat: 0,
                 lock: false,
+                // TODO(joni): Change default values to 0 across the board
+                segment: 0xff,
             },
         }
     }
@@ -70,13 +79,22 @@ impl Writer {
         self.context.lock = true;
     }
 
+    pub fn set_segment_prefix(&mut self, segment: u8) {
+        self.context.segment = segment;
+    }
+
     fn write_instruction_input(&mut self, instruction: &Instruction) {
         self.write_str("; ");
 
         assert!(instruction.length <= 6, "Instruction length is too long.");
 
+        if self.context.segment != 0xff {
+            let segment_mask = self.context.segment << 3;
+            self.write_str(&format!("{:08b} ", 0b00100110 | segment_mask));
+        }
+
         if self.context.lock {
-            self.write_str(&format!("{:00b} ", 0b11110000));
+            self.write_str(&format!("{:08b} ", 0b11110000));
         }
 
         if self.context.repeat != 0 {
@@ -192,6 +210,72 @@ impl Writer {
             instruction.data as i8 as i16
         };
         self.write_str(&signed_data.to_string())
+    }
+
+    fn register_to_str(&self, instruction: &Instruction, register: InstRegister) -> &str {
+        match register {
+            InstRegister::Reg(reg) => {
+                if instruction.fields.word {
+                    &WORD_REGISTER_STRINGS[reg as usize]
+                } else {
+                    &BYTE_REGISTER_STRINGS[reg as usize]
+                }
+            }
+            InstRegister::SegReg(reg) => &SEGMENT_REGISTER_STRINGS[reg as usize],
+        }
+    }
+
+    fn effective_to_string(&self, instruction: &Instruction, effective: u8) -> String {
+        let has_memory_mode = instruction.data_fields.mode == mode::MEMORY_MODE;
+        if effective == effective::BP_OR_DIRECT_ADDRESS && has_memory_mode {
+            format!("[{}", instruction.disp)
+        } else {
+            EFFECTIVE_ADDRESS_STRINGS[effective as usize].to_string()
+        }
+    }
+
+    pub fn address_to_string(&mut self, instruction: &Instruction, rm: RM) -> String {
+        let mut string = String::new();
+
+        match rm {
+            RM::Reg(reg) => {
+                string.push_str(self.register_to_str(instruction, reg));
+            }
+            RM::Eff(eff) => {
+                if self.context.segment != 0xff {
+                    string.push_str(&SEGMENT_REGISTER_STRINGS[self.context.segment as usize]);
+                    string.push_str(":");
+                    self.context.segment = 0xff;
+                }
+                string.push_str(&self.effective_to_string(instruction, eff));
+                let mode = instruction.data_fields.mode;
+                let is_direct_address =
+                    eff == effective::BP_OR_DIRECT_ADDRESS && mode == mode::MEMORY_MODE;
+
+                if !is_direct_address && instruction.disp != 0 {
+                    string.push_str(&format!("{:+}", instruction.disp));
+                }
+
+                string.push_str("]");
+            }
+        }
+
+        string
+    }
+
+    pub fn write_source(&mut self, instruction: &Instruction) -> &mut Self {
+        let str = self.address_to_string(instruction, instruction.get_source());
+        self.write_str(&str)
+    }
+
+    pub fn write_destination(&mut self, instruction: &Instruction) -> &mut Self {
+        let str = self.address_to_string(instruction, instruction.get_destination());
+        self.write_str(&str)
+    }
+
+    pub fn write_rm(&mut self, instruction: &Instruction) -> &mut Self {
+        let str = self.address_to_string(instruction, instruction.data_fields.rm);
+        self.write_str(&str)
     }
 
     pub fn write_jump_displacement(&mut self, displacement: i8) -> &mut Self {

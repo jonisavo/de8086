@@ -39,28 +39,30 @@ pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
 };
 
 pub fn write_in_out_fixed_port(writer: &mut Writer, instruction: &Instruction) {
+    let destination_string = writer.address_to_string(instruction, instruction.get_destination());
+    let data_string = instruction.data.to_string();
     let op1 = if instruction.mnemonic == "in" {
-        instruction.destination_string()
+        destination_string.as_str()
     } else {
-        instruction.data.to_string()
+        data_string.as_str()
     };
     let op2 = if instruction.mnemonic == "in" {
-        instruction.data.to_string()
+        data_string.as_str()
     } else {
-        instruction.destination_string()
+        destination_string.as_str()
     };
 
     writer
         .start_instruction(instruction)
-        .write_str(&op1)
+        .write_str(op1)
         .write_comma_separator()
-        .write_str(&op2)
+        .write_str(op2)
         .end_line();
 }
 
 pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction) {
     const DX_STR: &str = &WORD_REGISTER_STRINGS[register::DX as usize];
-    let destination_string = &instruction.destination_string();
+    let destination_string = &writer.address_to_string(instruction, instruction.get_destination());
 
     let op1 = if instruction.mnemonic == "in" {
         destination_string

@@ -96,10 +96,7 @@ pub const INDIRECT_WITHIN_SEGMENT: Description = Description {
         parse_typical_instruction(inst, mnemonic, bytes);
     },
     write_fn: |writer, inst| {
-        writer
-            .start_instruction(inst)
-            .write_str(&inst.address_to_string(inst.data_fields.rm))
-            .end_line();
+        writer.start_instruction(inst).write_rm(inst).end_line();
     },
 };
 
@@ -123,7 +120,7 @@ pub const INDIRECT_INTERSEGMENT: Description = Description {
         writer
             .start_instruction(inst)
             .write_str("far ")
-            .write_str(&inst.address_to_string(inst.data_fields.rm))
+            .write_rm(inst)
             .end_line();
     },
 };
