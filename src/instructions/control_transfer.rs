@@ -5,30 +5,31 @@ use crate::{writer::Writer, Instruction};
 use super::{
     common::parse_typical_instruction,
     common::{get_disp_value, parse_bare_instruction, write_bare_instruction},
+    opcode::Opcode,
     Description,
 };
 
-pub const CONDITIONAL_JUMP_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
-    0b01110100_u8 => "je",
-    0b01111100_u8 => "jl",
-    0b01111110_u8 => "jle",
-    0b01110010_u8 => "jb",
-    0b01110110_u8 => "jbe",
-    0b01111010_u8 => "jp",
-    0b01110000_u8 => "jo",
-    0b01111000_u8 => "js",
-    0b01110101_u8 => "jne",
-    0b01111101_u8 => "jnl",
-    0b01111111_u8 => "jnle",
-    0b01110011_u8 => "jnb",
-    0b01110111_u8 => "jnbe",
-    0b01111011_u8 => "jnp",
-    0b01110001_u8 => "jno",
-    0b01111001_u8 => "jns",
-    0b11100010_u8 => "loop",
-    0b11100001_u8 => "loopz",
-    0b11100000_u8 => "loopnz",
-    0b11100011_u8 => "jcxz",
+pub const CONDITIONAL_JUMP_OPCODE_MAP: Map<u8, Opcode> = phf_map! {
+    0b01110100_u8 => Opcode::JE,
+    0b01111100_u8 => Opcode::JL,
+    0b01111110_u8 => Opcode::JLE,
+    0b01110010_u8 => Opcode::JB,
+    0b01110110_u8 => Opcode::JBE,
+    0b01111010_u8 => Opcode::JP,
+    0b01110000_u8 => Opcode::JO,
+    0b01111000_u8 => Opcode::JS,
+    0b01110101_u8 => Opcode::JNE,
+    0b01111101_u8 => Opcode::JGE,
+    0b01111111_u8 => Opcode::JG,
+    0b01110011_u8 => Opcode::JAE,
+    0b01110111_u8 => Opcode::JA,
+    0b01111011_u8 => Opcode::JNP,
+    0b01110001_u8 => Opcode::JNO,
+    0b01111001_u8 => Opcode::JNS,
+    0b11100010_u8 => Opcode::LOOP,
+    0b11100001_u8 => Opcode::LOOPE,
+    0b11100000_u8 => Opcode::LOOPNE,
+    0b11100011_u8 => Opcode::JCXZ,
 };
 
 fn parse_direct_within_segment(bytes: &[u8], inst: &mut Instruction) {
@@ -58,7 +59,7 @@ fn write_direct_intersegment(writer: &mut Writer, instruction: &Instruction) {
 fn parse_conditional_jump(bytes: &[u8], inst: &mut Instruction) {
     let byte = bytes[0] as u8;
 
-    inst.mnemonic = CONDITIONAL_JUMP_MNEMONIC_MAP.get(&byte).unwrap();
+    inst.opcode = CONDITIONAL_JUMP_OPCODE_MAP[&byte];
     inst.length = 2;
     inst.disp = get_disp_value(bytes, 1, 1);
 }
@@ -70,12 +71,12 @@ fn write_conditional_jump(writer: &mut Writer, instruction: &Instruction) {
         .end_line();
 }
 
-const CONTROL_TRANSFER_MNEMONICS: [&str; 2] = ["call", "jmp"];
+const CONTROL_TRANSFER_OPCODES: [Opcode; 2] = [Opcode::CALL, Opcode::JMP];
 
 pub const DIRECT_WITHIN_SEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         parse_direct_within_segment(bytes, inst);
-        inst.mnemonic = CONTROL_TRANSFER_MNEMONICS[(bytes[0] & 0b1) as usize];
+        inst.opcode = CONTROL_TRANSFER_OPCODES[(bytes[0] & 0b1) as usize];
     },
     write_fn: write_direct_within_segment,
 };
@@ -84,7 +85,7 @@ pub const JUMP_DIRECT_WITHIN_SEGMENT_SHORT: Description = Description {
     parse_fn: |bytes, inst| {
         inst.length = 2;
         inst.disp = get_disp_value(bytes, 1, 1);
-        inst.mnemonic = "jmp";
+        inst.opcode = Opcode::JMP;
     },
     write_fn: write_direct_within_segment,
 };
@@ -92,8 +93,8 @@ pub const JUMP_DIRECT_WITHIN_SEGMENT_SHORT: Description = Description {
 pub const INDIRECT_WITHIN_SEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         let sixth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
-        let mnemonic = CONTROL_TRANSFER_MNEMONICS[sixth_bit_set as usize];
-        parse_typical_instruction(inst, mnemonic, bytes);
+        let opcode = CONTROL_TRANSFER_OPCODES[sixth_bit_set as usize];
+        parse_typical_instruction(inst, opcode, bytes);
     },
     write_fn: |writer, inst| {
         writer.start_instruction(inst).write_rm(inst).end_line();
@@ -103,8 +104,8 @@ pub const INDIRECT_WITHIN_SEGMENT: Description = Description {
 pub const DIRECT_INTERSEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         let three_high_bits_set = (bytes[0] >> 5) == 0b111;
-        let mnemonic = CONTROL_TRANSFER_MNEMONICS[three_high_bits_set as usize];
-        inst.mnemonic = mnemonic;
+        let opcode = CONTROL_TRANSFER_OPCODES[three_high_bits_set as usize];
+        inst.opcode = opcode;
         inst.length = 5;
     },
     write_fn: write_direct_intersegment,
@@ -113,8 +114,8 @@ pub const DIRECT_INTERSEGMENT: Description = Description {
 pub const INDIRECT_INTERSEGMENT: Description = Description {
     parse_fn: |bytes, inst| {
         let sixth_bit_set = ((bytes[1] >> 5) & 0b1) == 0b1;
-        let mnemonic = CONTROL_TRANSFER_MNEMONICS[sixth_bit_set as usize];
-        parse_typical_instruction(inst, mnemonic, bytes);
+        let opcode = CONTROL_TRANSFER_OPCODES[sixth_bit_set as usize];
+        parse_typical_instruction(inst, opcode, bytes);
     },
     write_fn: |writer, inst| {
         writer
@@ -130,21 +131,21 @@ pub const CONDITIONAL_JUMP: Description = Description {
     write_fn: write_conditional_jump,
 };
 
-const RET_MNEMONICS: [&str; 2] = ["ret", "retf"];
+const RET_OPCODES: [Opcode; 2] = [Opcode::RET, Opcode::RETF];
 
-fn get_ret_mnemonic(bytes: &[u8]) -> &'static str {
+fn get_ret_opcode(bytes: &[u8]) -> Opcode {
     let fourth_bit_set = ((bytes[0] >> 3) & 0b1) == 0b1;
-    RET_MNEMONICS[fourth_bit_set as usize]
+    RET_OPCODES[fourth_bit_set as usize]
 }
 
 pub const RETURN_NO_VALUE: Description = Description {
-    parse_fn: |bytes, inst| parse_bare_instruction(inst, get_ret_mnemonic(bytes)),
+    parse_fn: |bytes, inst| parse_bare_instruction(inst, get_ret_opcode(bytes)),
     write_fn: write_bare_instruction,
 };
 pub const RETURN_WITH_VALUE: Description = Description {
     parse_fn: |bytes, inst| {
         inst.length = 3;
-        inst.mnemonic = get_ret_mnemonic(bytes);
+        inst.opcode = get_ret_opcode(bytes);
         inst.disp = get_disp_value(bytes, 2, 1);
     },
     write_fn: |writer, inst| {
@@ -155,14 +156,14 @@ pub const RETURN_WITH_VALUE: Description = Description {
     },
 };
 
-const INTERRUPT_MNEMONICS: [&str; 4] = ["int3", "int", "into", "iret"];
+const INTERRUPT_OPCODES: [Opcode; 4] = [Opcode::INT3, Opcode::INT, Opcode::INTO, Opcode::IRET];
 
 pub const INTERRUPT: Description = Description {
     parse_fn: |bytes, inst| {
         let interrupt_opcode = bytes[0] & 0b11;
         let has_data = interrupt_opcode == 1;
 
-        inst.mnemonic = INTERRUPT_MNEMONICS[interrupt_opcode as usize];
+        inst.opcode = INTERRUPT_OPCODES[interrupt_opcode as usize];
         inst.length = 1 + has_data as u8;
         inst.data = has_data as u16 * bytes[has_data as usize] as u16;
     },

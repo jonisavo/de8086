@@ -8,30 +8,31 @@ use super::{
         write_bare_instruction, write_typical_instruction, InstRegister, InstructionFields,
         WORD_REGISTER_STRINGS,
     },
+    opcode::Opcode,
     Description,
 };
 
-pub const DATA_TRANSFER_MNEMONIC_MAP: Map<u8, &'static str> = phf_map! {
-    0b11010111_u8 => "xlat",
-    0b10001101_u8 => "lea",
-    0b11000101_u8 => "lds",
-    0b11000100_u8 => "les",
-    0b10011111_u8 => "lahf",
-    0b10011110_u8 => "sahf",
-    0b10011100_u8 => "pushf",
-    0b10011101_u8 => "popf",
+pub const DATA_TRANSFER_OPCODE_MAP: Map<u8, Opcode> = phf_map! {
+    0b11010111_u8 => Opcode::XLAT,
+    0b10001101_u8 => Opcode::LEA,
+    0b11000101_u8 => Opcode::LDS,
+    0b11000100_u8 => Opcode::LES,
+    0b10011111_u8 => Opcode::LAHF,
+    0b10011110_u8 => Opcode::SAHF,
+    0b10011100_u8 => Opcode::PUSHF,
+    0b10011101_u8 => Opcode::POPF,
 };
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {
     write_fn: write_typical_instruction,
-    parse_fn: |bytes, inst| parse_typical_instruction(inst, "xchg", bytes),
+    parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::XCHG, bytes),
 };
 pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
     write_fn: write_typical_instruction,
     parse_fn: |bytes, inst| {
         let register = get_register(bytes[0]);
 
-        create_single_byte_instruction(inst, "xchg", register);
+        create_single_byte_instruction(inst, Opcode::XCHG, register);
 
         // Accumulator is the destination, source is the register
         inst.fields.direction = false;
@@ -41,12 +42,12 @@ pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
 pub fn write_in_out_fixed_port(writer: &mut Writer, instruction: &Instruction) {
     let destination_string = writer.address_to_string(instruction, instruction.get_destination());
     let data_string = instruction.data.to_string();
-    let op1 = if instruction.mnemonic == "in" {
+    let op1 = if instruction.opcode == Opcode::IN {
         destination_string.as_str()
     } else {
         data_string.as_str()
     };
-    let op2 = if instruction.mnemonic == "in" {
+    let op2 = if instruction.opcode == Opcode::IN {
         data_string.as_str()
     } else {
         destination_string.as_str()
@@ -64,12 +65,12 @@ pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction
     const DX_STR: &str = &WORD_REGISTER_STRINGS[register::DX as usize];
     let destination_string = &writer.address_to_string(instruction, instruction.get_destination());
 
-    let op1 = if instruction.mnemonic == "in" {
+    let op1 = if instruction.opcode == Opcode::IN {
         destination_string
     } else {
         DX_STR
     };
-    let op2 = if instruction.mnemonic == "in" {
+    let op2 = if instruction.opcode == Opcode::IN {
         DX_STR
     } else {
         destination_string
@@ -83,11 +84,18 @@ pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction
         .end_line();
 }
 
-pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
-    let second_bit = bytes[0] >> 1 & 0b1;
-    let mnemonic = if second_bit == 0 { "in" } else { "out" };
+fn get_in_or_out_opcode(byte: u8) -> Opcode {
+    let second_bit = byte >> 1 & 0b1;
 
-    inst.mnemonic = mnemonic;
+    if second_bit == 0 {
+        Opcode::IN
+    } else {
+        Opcode::OUT
+    }
+}
+
+pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
+    inst.opcode = get_in_or_out_opcode(bytes[0]);
     inst.length = 2;
     inst.fields = InstructionFields::parse(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
@@ -95,10 +103,7 @@ pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
 }
 
 pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
-    let second_bit = bytes[0] >> 1 & 0b1;
-    let mnemonic = if second_bit == 0 { "in" } else { "out" };
-
-    inst.mnemonic = mnemonic;
+    inst.opcode = get_in_or_out_opcode(bytes[0]);
     inst.length = 1;
     inst.fields = InstructionFields::parse(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
@@ -115,8 +120,8 @@ pub const IN_OUT_VARIABLE_PORT: Description = Description {
 
 pub const LEA_LDS_LES: Description = Description {
     parse_fn: |bytes, inst| {
-        let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
-        parse_typical_instruction(inst, mnemonic, bytes);
+        let opcode = DATA_TRANSFER_OPCODE_MAP[&bytes[0]];
+        parse_typical_instruction(inst, opcode, bytes);
         inst.fields.direction = true;
         inst.fields.word = true;
     },
@@ -125,8 +130,7 @@ pub const LEA_LDS_LES: Description = Description {
 
 pub const OTHER_DATA_TRANSFER: Description = Description {
     parse_fn: |bytes, inst| {
-        let mnemonic = DATA_TRANSFER_MNEMONIC_MAP.get(&bytes[0]).unwrap();
-        inst.mnemonic = mnemonic;
+        inst.opcode = DATA_TRANSFER_OPCODE_MAP[&bytes[0]];
         inst.length = 1;
     },
     write_fn: write_bare_instruction,

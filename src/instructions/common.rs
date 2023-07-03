@@ -1,5 +1,7 @@
 use crate::{writer::Writer, Instruction};
 
+use super::opcode::Opcode;
+
 pub mod mode {
     pub const MEMORY_MODE: u8 = 0b00;
     pub const BYTE_DISPLACEMENT: u8 = 0b01;
@@ -308,10 +310,10 @@ pub fn write_typical_instruction(writer: &mut Writer, instruction: &Instruction)
         .end_line();
 }
 
-pub fn parse_typical_instruction(inst: &mut Instruction, mnemonic: &'static str, bytes: &[u8]) {
+pub fn parse_typical_instruction(inst: &mut Instruction, opcode: Opcode, bytes: &[u8]) {
     let displacement = get_displacement_amount(bytes[1]);
 
-    inst.mnemonic = mnemonic;
+    inst.opcode = opcode;
     inst.length = 2 + displacement;
     inst.fields = InstructionFields::parse(bytes[0]);
     inst.register = get_register(bytes[1] >> 3);
@@ -325,7 +327,7 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
         .write_destination(instruction)
         .write_comma_separator();
 
-    if instruction.mnemonic == "mov" {
+    if instruction.opcode == Opcode::MOV {
         writer.write_with_w_flag(instruction.data, instruction);
     } else {
         writer.write_signed_data(instruction);
@@ -337,18 +339,18 @@ pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instructio
 #[inline]
 pub fn create_single_byte_instruction(
     inst: &mut Instruction,
-    mnemonic: &'static str,
+    opcode: Opcode,
     register: InstRegister,
 ) {
-    inst.mnemonic = mnemonic;
+    inst.opcode = opcode;
     inst.length = 1;
     inst.fields = InstructionFields::SET;
     inst.register = register;
 }
 
 #[inline]
-pub fn parse_bare_instruction(inst: &mut Instruction, mnemonic: &'static str) {
-    inst.mnemonic = mnemonic;
+pub fn parse_bare_instruction(inst: &mut Instruction, opcode: Opcode) {
+    inst.opcode = opcode;
     inst.length = 1;
 }
 

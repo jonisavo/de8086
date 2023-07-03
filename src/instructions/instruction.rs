@@ -3,12 +3,13 @@ use crate::writer::Writer;
 use super::{
     common::{register, InstRegister, InstructionDataFields, InstructionFields, RM},
     descriptions::{Description, UNIMPLEMENTED},
+    opcode::Opcode,
     resolve,
 };
 
 #[derive(Debug, Copy, Clone)]
 pub struct Instruction {
-    pub mnemonic: &'static str,
+    pub opcode: Opcode,
     pub length: u8,
     pub data_fields: InstructionDataFields,
     pub disp: i16,
@@ -21,7 +22,7 @@ pub struct Instruction {
 
 impl Instruction {
     pub const EMPTY: Instruction = Instruction {
-        mnemonic: "",
+        opcode: Opcode::UNKNOWN,
         length: 0,
         data_fields: InstructionDataFields::EMPTY,
         disp: 0,

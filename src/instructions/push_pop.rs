@@ -5,22 +5,23 @@ use super::{
         create_single_byte_instruction, get_disp_value, get_displacement_amount, get_register,
         get_segment_register, InstructionDataFields,
     },
+    opcode::Opcode,
     Description,
 };
 
-fn get_push_or_pop_mnemonic(byte: u8) -> &'static str {
+fn get_push_or_pop_opcode(byte: u8) -> Opcode {
     let middle_bytes = byte >> 3;
     if middle_bytes & 0b111 == 0b110 {
-        "push"
+        Opcode::PUSH
     } else {
-        "pop"
+        Opcode::POP
     }
 }
 
 pub fn parse_push_pop_register_or_memory(bytes: &[u8], inst: &mut Instruction) {
     let displacement = get_displacement_amount(bytes[1]);
 
-    inst.mnemonic = get_push_or_pop_mnemonic(bytes[1]);
+    inst.opcode = get_push_or_pop_opcode(bytes[1]);
     inst.length = 2 + displacement;
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
@@ -43,27 +44,27 @@ pub const PUSH_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes, inst| {
         let register = get_register(bytes[0]);
-        create_single_byte_instruction(inst, "push", register)
+        create_single_byte_instruction(inst, Opcode::PUSH, register)
     },
 };
 pub const POP_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes, inst| {
         let register = get_register(bytes[0]);
-        create_single_byte_instruction(inst, "pop", register)
+        create_single_byte_instruction(inst, Opcode::POP, register)
     },
 };
 pub const PUSH_SEGMENT_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes, inst| {
         let register = get_segment_register(bytes[0] >> 3);
-        create_single_byte_instruction(inst, "push", register)
+        create_single_byte_instruction(inst, Opcode::PUSH, register)
     },
 };
 pub const POP_SEGMENT_REGISTER: Description = Description {
     write_fn: write_push_or_pop,
     parse_fn: |bytes, inst| {
         let register = get_segment_register(bytes[0] >> 3);
-        create_single_byte_instruction(inst, "pop", register)
+        create_single_byte_instruction(inst, Opcode::POP, register)
     },
 };

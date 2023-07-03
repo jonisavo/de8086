@@ -7,6 +7,7 @@ pub mod data_transfer;
 pub mod instruction;
 pub mod logic;
 pub mod mov;
+pub mod opcode;
 pub mod processor_control;
 pub mod push_pop;
 pub mod strings;

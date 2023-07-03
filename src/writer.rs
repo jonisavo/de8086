@@ -144,7 +144,8 @@ impl Writer {
             self.context.repeat = 0;
         }
 
-        self.write_str(instruction.mnemonic).write_byte(b' ');
+        self.write_str(instruction.opcode.get_mnemonic())
+            .write_byte(b' ');
 
         self.current_instruction = Some(written_instruction);
 

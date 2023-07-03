@@ -1,6 +1,6 @@
 use super::{
-    arithmetic, control_transfer, data_transfer, instruction::Instruction, logic, mov, push_pop,
-    strings,
+    arithmetic, control_transfer, data_transfer, instruction::Instruction, logic, mov,
+    opcode::Opcode, push_pop, strings,
 };
 use crate::{instructions::processor_control, writer::Writer};
 use std::fmt::Debug;
@@ -22,19 +22,12 @@ impl Debug for Description {
     }
 }
 
-fn unimplemented_parse(_bytes: &[u8], inst: &mut Instruction) {
-    inst.mnemonic = "unimplemented";
-    inst.length = 0;
-    inst.description = &UNIMPLEMENTED;
-}
-
-fn unimplemented_write(_writer: &mut Writer, instruction: &Instruction) {
-    unimplemented!("{}", instruction.mnemonic)
-}
-
 pub const UNIMPLEMENTED: Description = Description {
-    parse_fn: unimplemented_parse,
-    write_fn: unimplemented_write,
+    parse_fn: |_bytes, inst| {
+        inst.opcode = Opcode::UNKNOWN;
+        inst.length = 0;
+    },
+    write_fn: |_writer, instruction| unimplemented!("{:?}", instruction.opcode),
 };
 
 fn resolve_logic_bytes(bytes: &[u8]) -> &'static Description {
@@ -45,7 +38,7 @@ fn resolve_logic_bytes(bytes: &[u8]) -> &'static Description {
         0b001 => &logic::ROR,
         0b010 => &logic::RCL,
         0b011 => &logic::RCR,
-        0b100 => &logic::SHL,
+        0b100 => &logic::SAL,
         0b101 => &logic::SHR,
         0b111 => &logic::SAR,
         _ => &UNIMPLEMENTED,
