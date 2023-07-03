@@ -42,3 +42,8 @@ pub const SEGMENT_OVERRIDE: Description = Description {
         writer.set_segment_prefix(inst.register.into());
     },
 };
+
+pub const NOP: Description = Description {
+    parse_fn: |_, inst| parse_bare_instruction(inst, Opcode::NOP),
+    write_fn: |writer, inst| write_bare_instruction(writer, inst),
+};

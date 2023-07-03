@@ -83,6 +83,14 @@ fn resolve_ff_byte(bytes: &[u8]) -> &'static Description {
     }
 }
 
+fn resolve_xchg(byte: u8) -> &'static Description {
+    if byte & 0b111 == 0 {
+        &processor_control::NOP
+    } else {
+        &data_transfer::XCHG_REGISTER_WITH_ACCUMULATOR
+    }
+}
+
 pub fn resolve(bytes: &[u8]) -> &'static Description {
     assert!(bytes.len() > 0, "Cannot resolve instruction with no bytes.");
 
@@ -102,7 +110,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b01011000..=0b01011111 => &push_pop::POP_REGISTER,
         0b00000111 | 0b00001111 | 0b00010111 | 0b00011111 => &push_pop::POP_SEGMENT_REGISTER,
         0b10000110 | 0b10000111 => &data_transfer::XCHG_MEMORY_WITH_REGISTER,
-        0b10010000..=0b10010111 => &data_transfer::XCHG_REGISTER_WITH_ACCUMULATOR,
+        n @ 0b10010000..=0b10010111 => resolve_xchg(n),
         0b11100100..=0b11100111 => &data_transfer::IN_OUT_FIXED_PORT,
         0b11101100..=0b11101111 => &data_transfer::IN_OUT_VARIABLE_PORT,
         0b11010111 | 0b10011111 | 0b10011110 | 0b10011100 | 0b10011101 => {

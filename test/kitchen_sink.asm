@@ -71,7 +71,8 @@ pop ds
 xchg ax, [bp - 1000]
 xchg [bx + 50], bp
 
-xchg ax, ax
+xchg ax, ax ; xchg ax, ax is nop
+nop
 xchg ax, dx
 xchg ax, sp
 xchg ax, si
