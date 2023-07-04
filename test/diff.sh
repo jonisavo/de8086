@@ -12,6 +12,9 @@ xxd $DE_FILE > de_file_xxd.txt
 xxd $FILE > file_xxd.txt
 
 diff -y de_file_xxd.txt file_xxd.txt
-echo $?
+EXIT=$?
+echo "Exit code: $EXIT"
 
 rm de_file_xxd.txt file_xxd.txt ${DE_FILE}.asm ${DE_FILE}
+
+exit $EXIT
