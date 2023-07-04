@@ -21,5 +21,6 @@ jobs:
         run: cargo test --verbose
       - name: Run diff script
         run: |
+          sudo apt-get install -y nasm
           chmod +x ./test/diff.sh
           ./test/diff.sh
