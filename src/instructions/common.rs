@@ -125,10 +125,10 @@ pub enum InstRegister {
 }
 
 impl InstRegister {
-    pub fn to_str(&self) -> &'static str {
+    pub fn to_str(self) -> &'static str {
         match self {
-            InstRegister::Reg(reg) => WORD_REGISTER_STRINGS[*reg as usize],
-            InstRegister::SegReg(reg) => SEGMENT_REGISTER_STRINGS[*reg as usize],
+            InstRegister::Reg(reg) => WORD_REGISTER_STRINGS[reg as usize],
+            InstRegister::SegReg(reg) => SEGMENT_REGISTER_STRINGS[reg as usize],
         }
     }
 }
