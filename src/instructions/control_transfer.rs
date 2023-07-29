@@ -40,7 +40,7 @@ fn parse_direct_within_segment(bytes: &[u8], inst: &mut Instruction) {
 fn write_direct_within_segment(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
-        .write_str(instruction.disp.to_string().as_str())
+        .write_jump_displacement(instruction.disp)
         .end_line();
 }
 
@@ -67,7 +67,7 @@ fn parse_conditional_jump(bytes: &[u8], inst: &mut Instruction) {
 fn write_conditional_jump(writer: &mut Writer, instruction: &Instruction) {
     writer
         .start_instruction(instruction)
-        .write_jump_displacement(instruction.disp as i8)
+        .write_jump_displacement(instruction.disp)
         .end_line();
 }
 

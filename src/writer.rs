@@ -71,15 +71,29 @@ impl Writer {
         }
     }
 
+    fn push_prefix_instruction(&mut self) {
+        let written_instruction = WrittenInstruction {
+            start_instruction_index: self.current_instruction_byte_index,
+            start_file_index: self.file_buffer.len(),
+            length: 1,
+        };
+        self.instruction_buffer.push(written_instruction);
+        self.current_instruction_byte_index += 1;
+        self.next_instruction_byte_index += 1;
+    }
+
     pub fn set_repeat_prefix(&mut self, byte: u8) {
+        self.push_prefix_instruction();
         self.context.repeat = byte;
     }
 
     pub fn set_lock_prefix(&mut self) {
+        self.push_prefix_instruction();
         self.context.lock = true;
     }
 
     pub fn set_segment_prefix(&mut self, segment: u8) {
+        self.push_prefix_instruction();
         self.context.segment = segment;
     }
 
@@ -126,14 +140,6 @@ impl Writer {
             self.write_instruction_input(instruction);
         }
 
-        let written_instruction = WrittenInstruction {
-            start_instruction_index: self.current_instruction_byte_index,
-            start_file_index: self.file_buffer.len(),
-            length: instruction.length,
-        };
-
-        self.instruction_buffer.push(written_instruction);
-
         if self.context.lock {
             self.write_str("lock ");
             self.context.lock = false;
@@ -143,6 +149,14 @@ impl Writer {
             self.write_str("rep ");
             self.context.repeat = 0;
         }
+
+        let written_instruction = WrittenInstruction {
+            start_instruction_index: self.current_instruction_byte_index,
+            start_file_index: self.file_buffer.len(),
+            length: instruction.length,
+        };
+
+        self.instruction_buffer.push(written_instruction);
 
         self.write_str(instruction.opcode.get_mnemonic())
             .write_byte(b' ');
@@ -279,7 +293,7 @@ impl Writer {
         self.write_str(&str)
     }
 
-    pub fn write_jump_displacement(&mut self, displacement: i8) -> &mut Self {
+    pub fn write_jump_displacement(&mut self, displacement: i16) -> &mut Self {
         let next_inst_byte = self.next_instruction_byte_index;
         let target_index = (next_inst_byte as isize) + (displacement as isize);
 
@@ -304,9 +318,7 @@ impl Writer {
         // Insert label to a previous instruction
 
         let mut current_instruction = self
-            .instruction_buffer
-            .last()
-            .copied()
+            .current_instruction
             .expect("No instruction to go back from");
 
         let abs_displacement = displacement.abs() as usize;
@@ -359,54 +371,50 @@ impl Writer {
 fn test_writer_labels_add_before() {
     let mut writer = Writer::new(WriterOptions { verbose: false });
 
-    let mov_instruction = Instruction::parse(&[0b1011_0000, 0b0000_0000]).unwrap();
-    let add_instruction = Instruction::parse(&[0b0000_0100, 0b0000_0000]).unwrap();
-    let sub_instruction = Instruction::parse(&[0b0010_1100, 0b0000_0000]).unwrap();
+    let mov_instruction = Instruction::parse(&[0b1000_1001, 0b1101_1000]).unwrap();
+    let add_instruction = Instruction::parse(&[0b0000_0001, 0b1101_1000]).unwrap();
+    let sub_instruction = Instruction::parse(&[0b0010_1001, 0b1101_1000]).unwrap();
     let je_instruction = Instruction::parse(&[0b0111_0100, 0b0000_0000]).unwrap();
+    let rep_instruction = Instruction::parse(&[0b1111_0011]).unwrap();
+    let cmps_instruction = Instruction::parse(&[0b1010_0110]).unwrap();
 
-    writer
-        .start_instruction(&add_instruction)
-        .write_str("ax, bx")
-        .end_line();
-    writer
-        .start_instruction(&sub_instruction)
-        .write_str("ax, bx")
-        .end_line();
+    add_instruction.write(&mut writer);
+    sub_instruction.write(&mut writer);
+
     let length = je_instruction.length + sub_instruction.length + add_instruction.length;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(-(length as i8))
+        .write_jump_displacement(-(length as i8 as i16))
         .end_line();
+
     let length = length + je_instruction.length;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(-(length as i8))
+        .write_jump_displacement(-(length as i8 as i16))
         .end_line();
-    writer
-        .start_instruction(&add_instruction)
-        .write_str("ax, bx")
-        .end_line();
+
+    add_instruction.write(&mut writer);
+
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(-(je_instruction.length as i8))
+        .write_jump_displacement(-(je_instruction.length as i8 as i16))
         .end_line();
+
     let length = je_instruction.length * 2;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(-(length as i8))
+        .write_jump_displacement(-(length as i8 as i16))
         .end_line();
-    writer
-        .start_instruction(&mov_instruction)
-        .write_str("ax, bx")
-        .end_line();
-    writer
-        .start_instruction(&sub_instruction)
-        .write_str("ax, bx")
-        .end_line();
-    let length = je_instruction.length * 3 + sub_instruction.length + mov_instruction.length;
+
+    mov_instruction.write(&mut writer);
+    sub_instruction.write(&mut writer);
+    rep_instruction.write(&mut writer);
+    cmps_instruction.write(&mut writer);
+
+    let length = je_instruction.length * 3 + sub_instruction.length + mov_instruction.length + 2;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(-(length as i8))
+        .write_jump_displacement(-(length as i8 as i16))
         .end_line();
 
     let slice = writer.as_slice();
@@ -424,6 +432,7 @@ je loc_1
 je loc_1
 mov ax, bx
 sub ax, bx
+rep cmpsb 
 je loc_1
 "
     );
@@ -433,40 +442,34 @@ je loc_1
 fn test_writer_labels_add_after() {
     let mut writer = Writer::new(WriterOptions { verbose: false });
 
-    let add_instruction = Instruction::parse(&[0b0000_0100, 0b0000_0000]).unwrap();
-    let sub_instruction = Instruction::parse(&[0b0010_1100, 0b0000_0000]).unwrap();
+    let add_instruction = Instruction::parse(&[0b0000_0001, 0b1101_1000]).unwrap();
+    let sub_instruction = Instruction::parse(&[0b0010_1001, 0b1101_1000]).unwrap();
     let je_instruction = Instruction::parse(&[0b0111_0100, 0b0000_0000]).unwrap();
 
     let length = je_instruction.length * 2;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(length as i8)
+        .write_jump_displacement(length as i8 as i16)
         .end_line();
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(je_instruction.length as i8)
+        .write_jump_displacement(je_instruction.length as i8 as i16)
         .end_line();
     let length = add_instruction.length + sub_instruction.length;
     writer
         .start_instruction(&je_instruction)
-        .write_jump_displacement(length as i8)
+        .write_jump_displacement(length as i8 as i16)
         .end_line();
-    writer
-        .start_instruction(&add_instruction)
-        .write_str("ax, bx")
-        .end_line();
-    writer
-        .start_instruction(&sub_instruction)
-        .write_str("ax, bx")
-        .end_line();
+
+    add_instruction.write(&mut writer);
+    sub_instruction.write(&mut writer);
+
     writer
         .start_instruction(&je_instruction)
         .write_jump_displacement(0)
         .end_line();
-    writer
-        .start_instruction(&add_instruction)
-        .write_str("ax, bx")
-        .end_line();
+
+    add_instruction.write(&mut writer);
 
     let slice = writer.as_slice();
 

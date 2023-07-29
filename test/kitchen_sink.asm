@@ -379,13 +379,13 @@ rep cmpsw
 rep scasw
 rep lodsw
 
+call_jump_label:
 rep stosb
 rep stosw
 
 ; Control transfer
 
-; why is this not working? nasm outputs something else than 11500.
-; call 11500
+call call_jump_label
 call [39201]
 call [bp - 100]
 call sp
@@ -399,9 +399,7 @@ jmp di
 jmp [12]
 jmp [4395]
 jmp 789:34
-; Same thing as "call 11500" above. Nasm outputs a different get_disp_value
-; for the direct within segment operations.
-; jmp 2620
+jmp call_jump_label
 jmp [di]
 jmp far [di]
 jmp 21862:30600
