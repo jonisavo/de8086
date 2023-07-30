@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Write;
 
 use crate::{
     instructions::common::{
@@ -46,12 +47,10 @@ pub struct Writer {
 
 impl Writer {
     pub fn new(options: WriterOptions) -> Self {
-        let mut buffer = Vec::new();
-        let mut instruction_buffer = Vec::new();
+        let buffer = Vec::new();
+        let instruction_buffer = Vec::new();
         let mut label_map = HashMap::new();
 
-        buffer.reserve(32);
-        instruction_buffer.reserve(32);
         label_map.reserve(16);
 
         Self {
@@ -72,12 +71,11 @@ impl Writer {
     }
 
     fn push_prefix_instruction(&mut self) {
-        let written_instruction = WrittenInstruction {
+        self.instruction_buffer.push(WrittenInstruction {
             start_instruction_index: self.current_instruction_byte_index,
             start_file_index: self.file_buffer.len(),
             length: 1,
-        };
-        self.instruction_buffer.push(written_instruction);
+        });
         self.current_instruction_byte_index += 1;
         self.next_instruction_byte_index += 1;
     }
@@ -181,16 +179,18 @@ impl Writer {
     }
 
     pub fn write_str(&mut self, string: &str) -> &mut Self {
-        self.write(string.as_bytes())
+        write!(self.file_buffer, "{}", string).unwrap();
+        self
     }
 
     pub fn write_comma_separator(&mut self) -> &mut Self {
-        self.write(b", ")
+        write!(self.file_buffer, ", ").unwrap();
+        self
     }
 
     pub fn write_comment(&mut self, comment: &str) -> &mut Self {
-        self.file_buffer.reserve(comment.len() + 2);
-        self.write(b"; ").write_str(comment).end_line()
+        write!(self.file_buffer, "; {}\n", comment).unwrap();
+        self
     }
 
     pub fn write_with_w_flag(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
