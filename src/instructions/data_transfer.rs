@@ -4,9 +4,9 @@ use crate::{writer::Writer, Instruction};
 
 use super::{
     common::{
-        create_single_byte_instruction, get_register, parse_typical_instruction, register,
-        write_bare_instruction, write_typical_instruction, InstRegister, InstructionFields,
-        WORD_REGISTER_STRINGS,
+        create_single_byte_instruction, get_register, instruction_flags, parse_instruction_flags,
+        parse_typical_instruction, register, write_bare_instruction, write_typical_instruction,
+        InstRegister, WORD_REGISTER_STRINGS,
     },
     opcode::Opcode,
     Description,
@@ -35,7 +35,7 @@ pub const XCHG_REGISTER_WITH_ACCUMULATOR: Description = Description {
         create_single_byte_instruction(inst, Opcode::XCHG, register);
 
         // Accumulator is the destination, source is the register
-        inst.fields.direction = false;
+        inst.flags |= instruction_flags::DIRECTION;
     },
 };
 
@@ -97,7 +97,7 @@ fn get_in_or_out_opcode(byte: u8) -> Opcode {
 pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
     inst.opcode = get_in_or_out_opcode(bytes[0]);
     inst.length = 2;
-    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.flags = parse_instruction_flags(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
     inst.data = bytes[1] as u16;
 }
@@ -105,7 +105,7 @@ pub fn parse_in_out_fixed_port(bytes: &[u8], inst: &mut Instruction) {
 pub fn parse_in_out_variable_port(bytes: &[u8], inst: &mut Instruction) {
     inst.opcode = get_in_or_out_opcode(bytes[0]);
     inst.length = 1;
-    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.flags = parse_instruction_flags(bytes[0]);
     inst.register = InstRegister::Reg(register::AX);
 }
 
@@ -122,8 +122,8 @@ pub const LEA_LDS_LES: Description = Description {
     parse_fn: |bytes, inst| {
         let opcode = DATA_TRANSFER_OPCODE_MAP[&bytes[0]];
         parse_typical_instruction(inst, opcode, bytes);
-        inst.fields.direction = true;
-        inst.fields.word = true;
+        inst.flags |= instruction_flags::WORD;
+        inst.flags |= instruction_flags::DIRECTION;
     },
     write_fn: write_typical_instruction,
 };

@@ -4,9 +4,9 @@ use super::{
     arithmetic::parse_immediate_to_accumulator,
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        parse_typical_instruction, write_immediate_instruction,
-        write_memory_or_register_instruction, write_typical_instruction, InstructionDataFields,
-        InstructionFields, RM,
+        instruction_flags::{self, has_shift_rotate_flag, has_sign_flag, has_word_flag},
+        parse_instruction_flags, parse_typical_instruction, write_immediate_instruction,
+        write_memory_or_register_instruction, write_typical_instruction, InstructionDataFields, RM,
     },
     opcode::Opcode,
     Description,
@@ -16,14 +16,18 @@ pub fn write_logic_instruction(writer: &mut Writer, inst: &Instruction) {
     writer.start_instruction(inst);
 
     if let RM::Eff(_) = inst.data_fields.rm {
-        if inst.fields.word {
+        if has_word_flag(inst.flags) {
             writer.write_str("word ");
         } else {
             writer.write_str("byte ");
         }
     }
 
-    let count_str = if inst.fields.shift_rotate { "cl" } else { "1" };
+    let count_str = if has_shift_rotate_flag(inst.flags) {
+        "cl"
+    } else {
+        "1"
+    };
 
     writer
         .write_rm(inst)
@@ -80,17 +84,17 @@ pub const TEST_REGISTER_OR_MEMORY: Description = Description {
 };
 pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
     parse_fn: |bytes, inst| {
-        let mut fields = InstructionFields::parse(bytes[0]);
-        fields.direction = false;
+        let mut flags = parse_instruction_flags(bytes[0]);
+        flags &= !instruction_flags::DIRECTION;
         let displacement = get_displacement_amount(bytes[1]);
-        let has_u16_immediate = fields.word && !fields.sign;
+        let has_u16_immediate = has_word_flag(flags) && !has_sign_flag(flags);
         let immediate_length = has_u16_immediate as u8 + 1;
         let data = get_data_value(bytes, has_u16_immediate, 2 + displacement as usize);
         let register = get_register(bytes[1] >> 3);
 
         inst.opcode = Opcode::TEST;
         inst.length = 2 + displacement + immediate_length;
-        inst.fields = fields;
+        inst.flags = flags;
         inst.register = register;
         inst.data_fields = InstructionDataFields::parse(bytes[1]);
         inst.disp = get_disp_value(&bytes, displacement, 2);

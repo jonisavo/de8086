@@ -1,5 +1,7 @@
 use crate::{writer::Writer, Instruction};
 
+use self::instruction_flags::has_word_flag;
+
 use super::opcode::Opcode;
 
 pub mod mode {
@@ -203,67 +205,84 @@ pub const WORD_REGISTER_STRINGS: [&str; 8] = ["ax", "cx", "dx", "bx", "sp", "bp"
 
 pub const BYTE_REGISTER_STRINGS: [&str; 8] = ["al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"];
 
-#[derive(Debug, Copy, Clone)]
-pub struct InstructionFields {
-    // Instruction operates on word
-    pub word: bool,
+pub mod instruction_flags {
+    /// Instruction operates on word
+    pub const WORD: u8 = 1 << 0;
     /// Sign extend 8-bit immediate data to 16 bits if word flag is set
-    pub sign: bool,
-    /// If true, instruction destination is specified in the register field,
+    pub const SIGN: u8 = 1 << 1;
+    /// If set, instruction destination is specified in the register field,
     /// otherwise the source is in the register field
-    pub direction: bool,
-    /// If false, shift/rotate count is one, otherwise it is in the CL register
-    pub shift_rotate: bool,
-    /// If false, repeat/loop while zero flag is cleared, otherwise repeat/loop
+    pub const DIRECTION: u8 = 1 << 2;
+    /// If unset, shift/rotate count is one, otherwise it is in the CL register
+    pub const SHIFT_ROTATE: u8 = 1 << 3;
+    /// If unset, repeat/loop while zero flag is cleared, otherwise repeat/loop
     /// while zero flag is set
-    pub zero: bool,
-}
+    pub const ZERO: u8 = 1 << 4;
 
-impl InstructionFields {
-    pub const EMPTY: InstructionFields = InstructionFields {
-        word: false,
-        sign: false,
-        direction: false,
-        shift_rotate: false,
-        zero: false,
-    };
-    pub const SET: InstructionFields = InstructionFields {
-        word: true,
-        sign: true,
-        direction: true,
-        shift_rotate: true,
-        zero: true,
-    };
+    pub const SET: u8 = WORD | SIGN | DIRECTION | SHIFT_ROTATE | ZERO;
 
-    pub const fn parse(byte: u8) -> InstructionFields {
-        let first_flag = byte & 0b1 == 0b1;
-        let second_flag = (byte >> 1) & 0b1 == 0b1;
+    #[inline]
+    pub fn has_word_flag(flags: u8) -> bool {
+        flags & WORD == WORD
+    }
 
-        InstructionFields {
-            word: first_flag,
-            sign: second_flag,
-            direction: second_flag,
-            shift_rotate: second_flag,
-            zero: first_flag,
-        }
+    #[inline]
+    pub fn has_sign_flag(flags: u8) -> bool {
+        flags & SIGN == SIGN
+    }
+
+    #[inline]
+    pub fn has_direction_flag(flags: u8) -> bool {
+        flags & DIRECTION == DIRECTION
+    }
+
+    #[inline]
+    pub fn has_shift_rotate_flag(flags: u8) -> bool {
+        flags & SHIFT_ROTATE == SHIFT_ROTATE
     }
 }
 
-#[test]
-fn test_parse_instruction_fields() {
-    let fields = InstructionFields::parse(0b00000001);
-    assert_eq!(fields.word, true);
-    assert_eq!(fields.sign, false);
-    assert_eq!(fields.direction, false);
-    assert_eq!(fields.shift_rotate, false);
-    assert_eq!(fields.zero, true);
+pub fn parse_instruction_flags(byte: u8) -> u8 {
+    let mut flags = 0;
 
-    let fields = InstructionFields::parse(0b00000010);
-    assert_eq!(fields.word, false);
-    assert_eq!(fields.sign, true);
-    assert_eq!(fields.direction, true);
-    assert_eq!(fields.shift_rotate, true);
-    assert_eq!(fields.zero, false);
+    let first_flag = byte & 0b1 == 0b1;
+    let second_flag = (byte >> 1) & 0b1 == 0b1;
+
+    if first_flag {
+        flags |= instruction_flags::WORD;
+        flags |= instruction_flags::ZERO;
+    }
+
+    if second_flag {
+        flags |= instruction_flags::SIGN;
+        flags |= instruction_flags::DIRECTION;
+        flags |= instruction_flags::SHIFT_ROTATE;
+    }
+
+    flags
+}
+
+#[test]
+fn test_parse_instruction_flags() {
+    let flags = parse_instruction_flags(0b00000001);
+    assert_eq!(flags & instruction_flags::WORD, instruction_flags::WORD);
+    assert_eq!(flags & instruction_flags::SIGN, 0);
+    assert_eq!(flags & instruction_flags::DIRECTION, 0);
+    assert_eq!(flags & instruction_flags::SHIFT_ROTATE, 0);
+    assert_eq!(flags & instruction_flags::ZERO, instruction_flags::ZERO);
+
+    let flags = parse_instruction_flags(0b00000010);
+    assert_eq!(flags & instruction_flags::WORD, 0);
+    assert_eq!(flags & instruction_flags::SIGN, instruction_flags::SIGN);
+    assert_eq!(
+        flags & instruction_flags::DIRECTION,
+        instruction_flags::DIRECTION
+    );
+    assert_eq!(
+        flags & instruction_flags::SHIFT_ROTATE,
+        instruction_flags::SHIFT_ROTATE
+    );
+    assert_eq!(flags & instruction_flags::ZERO, 0);
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -315,7 +334,7 @@ pub fn parse_typical_instruction(inst: &mut Instruction, opcode: Opcode, bytes: 
 
     inst.opcode = opcode;
     inst.length = 2 + displacement;
-    inst.fields = InstructionFields::parse(bytes[0]);
+    inst.flags = parse_instruction_flags(bytes[0]);
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
     inst.disp = get_disp_value(&bytes, displacement, 2);
@@ -344,7 +363,7 @@ pub fn create_single_byte_instruction(
 ) {
     inst.opcode = opcode;
     inst.length = 1;
-    inst.fields = InstructionFields::SET;
+    inst.flags = instruction_flags::SET;
     inst.register = register;
 }
 
@@ -363,7 +382,7 @@ pub fn write_memory_or_register_instruction(writer: &mut Writer, inst: &Instruct
     writer.start_instruction(inst);
 
     if let RM::Eff(_) = inst.data_fields.rm {
-        if inst.fields.word {
+        if has_word_flag(inst.flags) {
             writer.write_str("word ");
         } else {
             writer.write_str("byte ");

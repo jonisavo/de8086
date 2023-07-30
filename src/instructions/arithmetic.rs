@@ -3,9 +3,10 @@ use crate::{writer::Writer, Instruction};
 use super::{
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        parse_bare_instruction, parse_typical_instruction, register, write_bare_instruction,
-        write_immediate_instruction, write_memory_or_register_instruction,
-        write_typical_instruction, InstRegister, InstructionDataFields, InstructionFields,
+        instruction_flags::{self, has_sign_flag, has_word_flag},
+        parse_bare_instruction, parse_instruction_flags, parse_typical_instruction, register,
+        write_bare_instruction, write_immediate_instruction, write_memory_or_register_instruction,
+        write_typical_instruction, InstRegister, InstructionDataFields,
     },
     opcode::Opcode,
     Description,
@@ -23,9 +24,9 @@ pub const ARITHMETIC_OPCODES: [Opcode; 8] = [
 ];
 
 pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8], inst: &mut Instruction) {
-    let fields = InstructionFields::parse(bytes[0]);
+    let flags = parse_instruction_flags(bytes[0]);
     let displacement = get_displacement_amount(bytes[1]);
-    let has_u16_immediate = fields.word && !fields.sign;
+    let has_u16_immediate = has_word_flag(flags) && !has_sign_flag(flags);
     let immediate_length = has_u16_immediate as u8 + 1;
     let data = get_data_value(bytes, has_u16_immediate, 2 + displacement as usize);
     let register = get_register(bytes[1] >> 3);
@@ -33,7 +34,7 @@ pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8], inst: &mut Instruct
 
     inst.opcode = ARITHMETIC_OPCODES[register_number as usize];
     inst.length = 2 + displacement + immediate_length;
-    inst.fields = fields;
+    inst.flags = flags;
     inst.register = register;
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
     inst.disp = get_disp_value(&bytes, displacement, 2);
@@ -50,13 +51,14 @@ pub fn write_arithmetic_imm_to_register_memory(writer: &mut Writer, instruction:
 }
 
 pub fn parse_immediate_to_accumulator(inst: &mut Instruction, opcode: Opcode, bytes: &[u8]) {
-    let fields = InstructionFields::parse(bytes[0]);
-    let length = fields.word as u8 + 2;
-    let data = get_data_value(bytes, fields.word, 1);
+    let flags = parse_instruction_flags(bytes[0]);
+    let has_word_flag = has_word_flag(flags);
+    let length = has_word_flag as u8 + 2;
+    let data = get_data_value(bytes, has_word_flag, 1);
 
     inst.opcode = opcode;
     inst.length = length;
-    inst.fields = fields;
+    inst.flags = flags;
     inst.register = InstRegister::Reg(register::AX);
     inst.data = data;
 }
@@ -95,7 +97,7 @@ pub const INC_REGISTER: Description = Description {
         inst.opcode = Opcode::INC;
         inst.length = 1;
         inst.register = get_register(bytes[0] & 0b111);
-        inst.fields.word = true;
+        inst.flags |= instruction_flags::WORD;
     },
     write_fn: write_only_register_instruction,
 };
@@ -127,7 +129,7 @@ pub const DEC_REGISTER: Description = Description {
         inst.opcode = Opcode::DEC;
         inst.length = 1;
         inst.register = get_register(bytes[0] & 0b111);
-        inst.fields.word = true;
+        inst.flags |= instruction_flags::WORD;
     },
     write_fn: write_only_register_instruction,
 };

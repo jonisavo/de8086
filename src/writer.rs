@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use crate::{
     instructions::common::{
-        effective, mode, InstRegister, BYTE_REGISTER_STRINGS, EFFECTIVE_ADDRESS_STRINGS, RM,
-        SEGMENT_REGISTER_STRINGS, WORD_REGISTER_STRINGS,
+        effective, instruction_flags::has_word_flag, mode, InstRegister, BYTE_REGISTER_STRINGS,
+        EFFECTIVE_ADDRESS_STRINGS, RM, SEGMENT_REGISTER_STRINGS, WORD_REGISTER_STRINGS,
     },
     Instruction,
 };
@@ -196,7 +196,7 @@ impl Writer {
     pub fn write_with_w_flag(&mut self, value: u16, instruction: &Instruction) -> &mut Self {
         self.file_buffer.reserve(6);
 
-        if instruction.fields.word {
+        if has_word_flag(instruction.flags) {
             self.write(format!("{:#006x}", value).as_bytes())
         } else {
             self.write(format!("{:#004x}", value).as_bytes())
@@ -206,7 +206,7 @@ impl Writer {
     pub fn write_size(&mut self, instruction: &Instruction) -> &mut Self {
         self.file_buffer.reserve(5);
 
-        if instruction.fields.word {
+        if has_word_flag(instruction.flags) {
             self.write(b"word ")
         } else {
             self.write(b"byte ")
@@ -219,7 +219,7 @@ impl Writer {
     }
 
     pub fn write_signed_data(&mut self, instruction: &Instruction) -> &mut Self {
-        let signed_data = if instruction.fields.word {
+        let signed_data = if has_word_flag(instruction.flags) {
             instruction.data as i16
         } else {
             instruction.data as i8 as i16
@@ -230,7 +230,7 @@ impl Writer {
     fn register_to_str(&self, instruction: &Instruction, register: InstRegister) -> &str {
         match register {
             InstRegister::Reg(reg) => {
-                if instruction.fields.word {
+                if has_word_flag(instruction.flags) {
                     &WORD_REGISTER_STRINGS[reg as usize]
                 } else {
                     &BYTE_REGISTER_STRINGS[reg as usize]

@@ -1,7 +1,9 @@
 use crate::writer::Writer;
 
 use super::{
-    common::{register, InstRegister, InstructionDataFields, InstructionFields, RM},
+    common::{
+        instruction_flags::has_direction_flag, register, InstRegister, InstructionDataFields, RM,
+    },
     descriptions::{Description, UNIMPLEMENTED},
     opcode::Opcode,
     resolve,
@@ -14,7 +16,7 @@ pub struct Instruction {
     pub data_fields: InstructionDataFields,
     pub disp: i16,
     pub data: u16,
-    pub fields: InstructionFields,
+    pub flags: u8,
     pub register: InstRegister,
     pub description: &'static Description,
     pub input: [u8; 6],
@@ -27,7 +29,7 @@ impl Instruction {
         data_fields: InstructionDataFields::EMPTY,
         disp: 0,
         data: 0,
-        fields: InstructionFields::EMPTY,
+        flags: 0,
         register: InstRegister::Reg(register::AX),
         description: &UNIMPLEMENTED,
         input: [0; 6],
@@ -61,7 +63,7 @@ impl Instruction {
     }
 
     pub fn get_source(&self) -> RM {
-        if self.fields.direction {
+        if has_direction_flag(self.flags) {
             self.data_fields.rm
         } else {
             RM::Reg(self.register)
@@ -69,7 +71,7 @@ impl Instruction {
     }
 
     pub fn get_destination(&self) -> RM {
-        if self.fields.direction {
+        if has_direction_flag(self.flags) {
             RM::Reg(self.register)
         } else {
             self.data_fields.rm
