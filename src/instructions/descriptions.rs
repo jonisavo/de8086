@@ -140,7 +140,7 @@ pub fn resolve(bytes: &[u8]) -> &'static Description {
         0b10011001 => &arithmetic::CWD,
         0b00100000..=0b00100011 => &logic::AND_WITH_REGISTER,
         0b00100100 | 0b00100101 => &logic::AND_IMMEDIATE_FROM_ACCUMULATOR,
-        0b10000100..=0b10000111 => &logic::TEST_REGISTER_OR_MEMORY,
+        0b10000100 | 0b10000101 => &logic::TEST_REGISTER_OR_MEMORY,
         0b10101000 | 0b10101001 => &logic::TEST_IMMEDIATE_AND_ACCUMULATOR,
         0b00001000..=0b00001011 => &logic::OR_WITH_REGISTER,
         0b00001100 | 0b00001101 => &logic::OR_IMMEDIATE_TO_ACCUMULATOR,
