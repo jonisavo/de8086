@@ -1,5 +1,3 @@
-use phf::{phf_map, Map};
-
 use crate::{writer::Writer, Instruction};
 
 use super::{
@@ -10,17 +8,6 @@ use super::{
     },
     opcode::Opcode,
     Description,
-};
-
-pub const DATA_TRANSFER_OPCODE_MAP: Map<u8, Opcode> = phf_map! {
-    0b11010111_u8 => Opcode::XLAT,
-    0b10001101_u8 => Opcode::LEA,
-    0b11000101_u8 => Opcode::LDS,
-    0b11000100_u8 => Opcode::LES,
-    0b10011111_u8 => Opcode::LAHF,
-    0b10011110_u8 => Opcode::SAHF,
-    0b10011100_u8 => Opcode::PUSHF,
-    0b10011101_u8 => Opcode::POPF,
 };
 
 pub const XCHG_MEMORY_WITH_REGISTER: Description = Description {
@@ -118,9 +105,24 @@ pub const IN_OUT_VARIABLE_PORT: Description = Description {
     write_fn: write_in_out_variable_port,
 };
 
+#[inline]
+fn get_data_transfer_opcode(byte: u8) -> Opcode {
+    match byte {
+        0b11010111_u8 => Opcode::XLAT,
+        0b10001101_u8 => Opcode::LEA,
+        0b11000101_u8 => Opcode::LDS,
+        0b11000100_u8 => Opcode::LES,
+        0b10011111_u8 => Opcode::LAHF,
+        0b10011110_u8 => Opcode::SAHF,
+        0b10011100_u8 => Opcode::PUSHF,
+        0b10011101_u8 => Opcode::POPF,
+        _ => unreachable!("Invalid data transfer opcode byte: {}", byte),
+    }
+}
+
 pub const LEA_LDS_LES: Description = Description {
     parse_fn: |bytes, inst| {
-        let opcode = DATA_TRANSFER_OPCODE_MAP[&bytes[0]];
+        let opcode = get_data_transfer_opcode(bytes[0]);
         parse_typical_instruction(inst, opcode, bytes);
         inst.flags |= instruction_flags::WORD;
         inst.flags |= instruction_flags::DIRECTION;
@@ -130,7 +132,7 @@ pub const LEA_LDS_LES: Description = Description {
 
 pub const OTHER_DATA_TRANSFER: Description = Description {
     parse_fn: |bytes, inst| {
-        inst.opcode = DATA_TRANSFER_OPCODE_MAP[&bytes[0]];
+        inst.opcode = get_data_transfer_opcode(bytes[0]);
         inst.length = 1;
     },
     write_fn: write_bare_instruction,

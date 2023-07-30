@@ -1,5 +1,3 @@
-use phf::{phf_map, Map};
-
 use crate::{writer::Writer, Instruction};
 
 use super::{
@@ -7,29 +5,6 @@ use super::{
     common::{get_disp_value, parse_bare_instruction, write_bare_instruction},
     opcode::Opcode,
     Description,
-};
-
-pub const CONDITIONAL_JUMP_OPCODE_MAP: Map<u8, Opcode> = phf_map! {
-    0b01110100_u8 => Opcode::JE,
-    0b01111100_u8 => Opcode::JL,
-    0b01111110_u8 => Opcode::JLE,
-    0b01110010_u8 => Opcode::JB,
-    0b01110110_u8 => Opcode::JBE,
-    0b01111010_u8 => Opcode::JP,
-    0b01110000_u8 => Opcode::JO,
-    0b01111000_u8 => Opcode::JS,
-    0b01110101_u8 => Opcode::JNE,
-    0b01111101_u8 => Opcode::JGE,
-    0b01111111_u8 => Opcode::JG,
-    0b01110011_u8 => Opcode::JAE,
-    0b01110111_u8 => Opcode::JA,
-    0b01111011_u8 => Opcode::JNP,
-    0b01110001_u8 => Opcode::JNO,
-    0b01111001_u8 => Opcode::JNS,
-    0b11100010_u8 => Opcode::LOOP,
-    0b11100001_u8 => Opcode::LOOPE,
-    0b11100000_u8 => Opcode::LOOPNE,
-    0b11100011_u8 => Opcode::JCXZ,
 };
 
 fn parse_direct_within_segment(bytes: &[u8], inst: &mut Instruction) {
@@ -57,9 +32,29 @@ fn write_direct_intersegment(writer: &mut Writer, instruction: &Instruction) {
 }
 
 fn parse_conditional_jump(bytes: &[u8], inst: &mut Instruction) {
-    let byte = bytes[0] as u8;
-
-    inst.opcode = CONDITIONAL_JUMP_OPCODE_MAP[&byte];
+    inst.opcode = match bytes[0] {
+        0b01110100_u8 => Opcode::JE,
+        0b01111100_u8 => Opcode::JL,
+        0b01111110_u8 => Opcode::JLE,
+        0b01110010_u8 => Opcode::JB,
+        0b01110110_u8 => Opcode::JBE,
+        0b01111010_u8 => Opcode::JP,
+        0b01110000_u8 => Opcode::JO,
+        0b01111000_u8 => Opcode::JS,
+        0b01110101_u8 => Opcode::JNE,
+        0b01111101_u8 => Opcode::JGE,
+        0b01111111_u8 => Opcode::JG,
+        0b01110011_u8 => Opcode::JAE,
+        0b01110111_u8 => Opcode::JA,
+        0b01111011_u8 => Opcode::JNP,
+        0b01110001_u8 => Opcode::JNO,
+        0b01111001_u8 => Opcode::JNS,
+        0b11100010_u8 => Opcode::LOOP,
+        0b11100001_u8 => Opcode::LOOPE,
+        0b11100000_u8 => Opcode::LOOPNE,
+        0b11100011_u8 => Opcode::JCXZ,
+        b => unreachable!("Invalid conditional jump opcode: {:b}", b),
+    };
     inst.length = 2;
     inst.disp = get_disp_value(bytes, 1, 1);
 }
