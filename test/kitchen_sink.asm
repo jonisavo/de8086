@@ -343,6 +343,7 @@ test [bp + 2], si
 test bl, 20
 test byte [bx], 34
 test ax, 23909
+test word [bx+si], 0x7788
 
 or al, ah
 or ch, cl

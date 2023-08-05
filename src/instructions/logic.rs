@@ -4,7 +4,7 @@ use super::{
     arithmetic::parse_immediate_to_accumulator,
     common::{
         get_data_value, get_disp_value, get_displacement_amount, get_register,
-        instruction_flags::{self, has_shift_rotate_flag, has_sign_flag, has_word_flag},
+        instruction_flags::{self, has_shift_rotate_flag, has_word_flag},
         parse_instruction_flags, parse_typical_instruction, write_immediate_instruction,
         write_memory_or_register_instruction, write_typical_instruction, InstructionDataFields, RM,
     },
@@ -87,7 +87,7 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
         let mut flags = parse_instruction_flags(bytes[0]);
         flags &= !instruction_flags::DIRECTION;
         let displacement = get_displacement_amount(bytes[1]);
-        let has_u16_immediate = has_word_flag(flags) && !has_sign_flag(flags);
+        let has_u16_immediate = has_word_flag(flags);
         let immediate_length = has_u16_immediate as u8 + 1;
         let data = get_data_value(bytes, has_u16_immediate, 2 + displacement as usize);
         let register = get_register(bytes[1] >> 3);
