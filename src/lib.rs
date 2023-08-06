@@ -35,7 +35,7 @@ pub fn run(
         index += instruction.length as usize;
     }
 
-    stdout().write_all(writer.as_slice()).unwrap();
+    stdout().write_all(writer.as_slice())?;
 
     if writer_options.verbose && index < bytes.len() {
         print!(
