@@ -5,6 +5,7 @@ use de8086::writer::{Writer, WriterOptions};
 use de8086::Instruction;
 
 const KITCHEN_SINK_BYTES: &[u8] = include_bytes!("../test/kitchen_sink");
+const EVIL_FILE_BYTES: &[u8] = include_bytes!("../test/evil_file");
 const MOV_FILE_BYTES: &[u8] = include_bytes!("../test/mov_file");
 
 fn benchmark_parse_mov(c: &mut Criterion) {
@@ -38,6 +39,16 @@ fn benchmark_file(c: &mut Criterion) {
         })
     });
 
+    c.bench_function("parse evil file", |b| {
+        let parser = Parser::build(black_box(EVIL_FILE_BYTES)).unwrap();
+
+        b.iter(move || {
+            for instruction in parser {
+                black_box(instruction);
+            }
+        })
+    });
+
     c.bench_function("parse mov file (1000 elements)", |b| {
         let parser = Parser::build(black_box(MOV_FILE_BYTES)).unwrap();
         b.iter(move || {
@@ -51,6 +62,17 @@ fn benchmark_file(c: &mut Criterion) {
 fn benchmark_write(c: &mut Criterion) {
     c.bench_function("write kitchen sink file", |b| {
         let parser = Parser::build(black_box(KITCHEN_SINK_BYTES)).unwrap();
+        let mut writer = Writer::new(WriterOptions { verbose: false });
+        let instructions = &parser.collect::<Vec<_>>();
+        b.iter(move || {
+            for instruction in instructions {
+                instruction.write(&mut writer);
+            }
+        })
+    });
+
+    c.bench_function("write evil file", |b| {
+        let parser = Parser::build(black_box(EVIL_FILE_BYTES)).unwrap();
         let mut writer = Writer::new(WriterOptions { verbose: false });
         let instructions = &parser.collect::<Vec<_>>();
         b.iter(move || {
