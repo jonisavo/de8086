@@ -13,7 +13,7 @@ fn read_file(filename: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 
     file.read_to_end(&mut buffer)?;
 
-    return Ok(buffer);
+    Ok(buffer)
 }
 
 pub fn run(

@@ -22,7 +22,7 @@ impl fmt::Display for ParserInitError {
 
 impl<'a> Parser<'a> {
     pub fn build(bytes: &'a [u8]) -> Result<Parser, ParserInitError> {
-        if bytes.len() == 0 {
+        if bytes.is_empty() {
             return Err(ParserInitError);
         }
 

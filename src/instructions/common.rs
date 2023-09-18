@@ -14,7 +14,7 @@ pub mod mode {
 /// Fetches the mode from the given byte's 2 most significant bits.
 #[inline]
 pub fn get_mode(byte: u8) -> u8 {
-    return byte >> 6;
+    byte >> 6
 }
 
 #[test]
@@ -135,9 +135,9 @@ impl InstRegister {
     }
 }
 
-impl Into<u8> for InstRegister {
-    fn into(self) -> u8 {
-        match self {
+impl From<InstRegister> for u8 {
+    fn from(val: InstRegister) -> Self {
+        match val {
             InstRegister::Reg(reg) => reg,
             InstRegister::SegReg(reg) => reg,
         }
@@ -171,7 +171,7 @@ const EFFECTIVE_DIRECT_ADDRESS: RM = RM::Eff(effective::BP_OR_DIRECT_ADDRESS);
 /// Fetches the R/M value from the given byte's 3 least significant bits.
 pub fn get_rm(byte: u8, mode: u8) -> RM {
     if mode == mode::REGISTER_MODE {
-        RM::Reg(get_register(byte).into())
+        RM::Reg(get_register(byte))
     } else {
         get_rm_effective_address(byte)
     }
@@ -337,7 +337,7 @@ pub fn parse_typical_instruction(inst: &mut Instruction, opcode: Opcode, bytes: 
     inst.flags = parse_instruction_flags(bytes[0]);
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
-    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.disp = get_disp_value(bytes, displacement, 2);
 }
 
 pub fn write_immediate_instruction(writer: &mut Writer, instruction: &Instruction) {

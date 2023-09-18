@@ -189,7 +189,7 @@ impl Writer {
     }
 
     pub fn write_comment(&mut self, comment: &str) -> &mut Self {
-        write!(self.file_buffer, "; {}\n", comment).unwrap();
+        writeln!(self.file_buffer, "; {}", comment).unwrap();
         self
     }
 
@@ -231,12 +231,12 @@ impl Writer {
         match register {
             InstRegister::Reg(reg) => {
                 if has_word_flag(instruction.flags) {
-                    &WORD_REGISTER_STRINGS[reg as usize]
+                    WORD_REGISTER_STRINGS[reg as usize]
                 } else {
-                    &BYTE_REGISTER_STRINGS[reg as usize]
+                    BYTE_REGISTER_STRINGS[reg as usize]
                 }
             }
-            InstRegister::SegReg(reg) => &SEGMENT_REGISTER_STRINGS[reg as usize],
+            InstRegister::SegReg(reg) => SEGMENT_REGISTER_STRINGS[reg as usize],
         }
     }
 
@@ -258,8 +258,8 @@ impl Writer {
             }
             RM::Eff(eff) => {
                 if self.context.segment != 0xff {
-                    string.push_str(&SEGMENT_REGISTER_STRINGS[self.context.segment as usize]);
-                    string.push_str(":");
+                    string.push_str(SEGMENT_REGISTER_STRINGS[self.context.segment as usize]);
+                    string.push(':');
                     self.context.segment = 0xff;
                 }
                 string.push_str(&self.effective_to_string(instruction, eff));
@@ -271,7 +271,7 @@ impl Writer {
                     string.push_str(&format!("{:+}", instruction.disp));
                 }
 
-                string.push_str("]");
+                string.push(']');
             }
         }
 
@@ -321,7 +321,7 @@ impl Writer {
             .current_instruction
             .expect("No instruction to go back from");
 
-        let abs_displacement = displacement.abs() as usize;
+        let abs_displacement = displacement.unsigned_abs() as usize;
         let mut target_instruction = &mut current_instruction;
 
         for inst in self.instruction_buffer.iter_mut().rev() {

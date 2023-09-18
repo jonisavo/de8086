@@ -43,5 +43,5 @@ pub const SEGMENT_OVERRIDE: Description = Description {
 
 pub const NOP: Description = Description {
     parse_fn: |_, inst| parse_bare_instruction(inst, Opcode::NOP),
-    write_fn: |writer, inst| write_bare_instruction(writer, inst),
+    write_fn: write_bare_instruction,
 };

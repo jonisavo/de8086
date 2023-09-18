@@ -97,7 +97,7 @@ pub const TEST_IMMEDIATE_AND_REGISTER_OR_MEMORY: Description = Description {
         inst.flags = flags;
         inst.register = register;
         inst.data_fields = InstructionDataFields::parse(bytes[1]);
-        inst.disp = get_disp_value(&bytes, displacement, 2);
+        inst.disp = get_disp_value(bytes, displacement, 2);
         inst.data = data;
     },
     write_fn: |writer, instruction| {

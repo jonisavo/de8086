@@ -49,7 +49,7 @@ pub fn write_in_out_fixed_port(writer: &mut Writer, instruction: &Instruction) {
 }
 
 pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction) {
-    const DX_STR: &str = &WORD_REGISTER_STRINGS[register::DX as usize];
+    const DX_STR: &str = WORD_REGISTER_STRINGS[register::DX as usize];
     let destination_string = &writer.address_to_string(instruction, instruction.get_destination());
 
     let op1 = if instruction.opcode == Opcode::IN {
@@ -65,9 +65,9 @@ pub fn write_in_out_variable_port(writer: &mut Writer, instruction: &Instruction
 
     writer
         .start_instruction(instruction)
-        .write_str(&op1)
+        .write_str(op1)
         .write_comma_separator()
-        .write_str(&op2)
+        .write_str(op2)
         .end_line();
 }
 

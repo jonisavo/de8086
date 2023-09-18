@@ -92,7 +92,7 @@ fn resolve_xchg(byte: u8) -> &'static Description {
 }
 
 pub fn resolve(bytes: &[u8]) -> &'static Description {
-    assert!(bytes.len() > 0, "Cannot resolve instruction with no bytes.");
+    assert!(!bytes.is_empty(), "Cannot resolve instruction with no bytes.");
 
     match bytes[0] {
         0b10001000..=0b10001011 => &mov::TO_REGISTER,

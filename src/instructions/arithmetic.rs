@@ -37,7 +37,7 @@ pub fn parse_arithmetic_imm_to_register_memory(bytes: &[u8], inst: &mut Instruct
     inst.flags = flags;
     inst.register = register;
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
-    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.disp = get_disp_value(bytes, displacement, 2);
     inst.data = data;
 }
 
@@ -66,26 +66,26 @@ pub fn parse_immediate_to_accumulator(inst: &mut Instruction, opcode: Opcode, by
 fn write_only_register_instruction(writer: &mut Writer, inst: &Instruction) {
     writer
         .start_instruction(inst)
-        .write_str(&inst.register.to_str())
+        .write_str(inst.register.to_str())
         .end_line();
 }
 
 pub const ADD_TO_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::ADD, bytes),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const ADD_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
     parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, Opcode::ADD, bytes),
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 
 pub const ADC_TO_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::ADC, bytes),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const ADC_IMMEDIATE_TO_ACCUMULATOR: Description = Description {
     parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, Opcode::ADC, bytes),
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 
 pub const INC_REGISTER_OR_MEMORY: Description = Description {
@@ -104,20 +104,20 @@ pub const INC_REGISTER: Description = Description {
 
 pub const SUB_FROM_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::SUB, bytes),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const SUB_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
     parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, Opcode::SUB, bytes),
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 
 pub const SBB_FROM_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::SBB, bytes),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const SBB_IMMEDIATE_FROM_ACCUMULATOR: Description = Description {
     parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, Opcode::SBB, bytes),
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 
 pub const DEC_REGISTER_OR_MEMORY: Description = Description {
@@ -141,11 +141,11 @@ pub const NEG: Description = Description {
 
 pub const CMP_WITH_REGISTER: Description = Description {
     parse_fn: |bytes, inst| parse_typical_instruction(inst, Opcode::CMP, bytes),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const CMP_IMMEDIATE_WITH_ACCUMULATOR: Description = Description {
     parse_fn: |bytes, inst| parse_immediate_to_accumulator(inst, Opcode::CMP, bytes),
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 
 pub const IMMEDIATE_TO_REGISTER_MEMORY: Description = Description {

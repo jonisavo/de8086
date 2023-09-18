@@ -34,7 +34,7 @@ pub fn parse_mov_immediate_to_memory(bytes: &[u8], inst: &mut Instruction) {
     inst.flags = flags;
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
-    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.disp = get_disp_value(bytes, displacement, 2);
     inst.data = data;
 }
 
@@ -72,7 +72,7 @@ pub fn parse_mov_to_segment_register(bytes: &[u8], inst: &mut Instruction) {
 
 pub const TO_REGISTER: Description = Description {
     parse_fn: |b, inst| parse_typical_instruction(inst, Opcode::MOV, b),
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const IMMEDIATE_TO_MEMORY: Description = Description {
     parse_fn: parse_mov_immediate_to_memory,
@@ -80,13 +80,13 @@ pub const IMMEDIATE_TO_MEMORY: Description = Description {
 };
 pub const IMMEDIATE_TO_REGISTER: Description = Description {
     parse_fn: parse_mov_immediate_to_register,
-    write_fn: |writer, inst| write_immediate_instruction(writer, inst),
+    write_fn: write_immediate_instruction,
 };
 pub const MEMORY_TO_ACCUMULATOR: Description = Description {
     parse_fn: parse_mov_memory_to_accumulator,
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };
 pub const TO_SEGMENT_REGISTER: Description = Description {
     parse_fn: parse_mov_to_segment_register,
-    write_fn: |writer, inst| write_typical_instruction(writer, inst),
+    write_fn: write_typical_instruction,
 };

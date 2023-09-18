@@ -36,7 +36,7 @@ impl Instruction {
     };
 
     pub fn parse(bytes: &[u8]) -> Option<Self> {
-        if bytes.len() == 0 {
+        if bytes.is_empty() {
             return None;
         }
 
@@ -49,9 +49,9 @@ impl Instruction {
             return None;
         }
 
-        for i in 0..instruction.length as usize {
-            instruction.input[i] = bytes[i];
-        }
+        let length = instruction.length as usize;
+
+        instruction.input[..length].copy_from_slice(&bytes[..length]);
 
         instruction.description = description;
 

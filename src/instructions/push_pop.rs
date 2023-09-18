@@ -25,7 +25,7 @@ pub fn parse_push_pop_register_or_memory(bytes: &[u8], inst: &mut Instruction) {
     inst.length = 2 + displacement;
     inst.register = get_register(bytes[1] >> 3);
     inst.data_fields = InstructionDataFields::parse(bytes[1]);
-    inst.disp = get_disp_value(&bytes, displacement, 2);
+    inst.disp = get_disp_value(bytes, displacement, 2);
 }
 
 pub fn write_push_or_pop(writer: &mut Writer, instruction: &Instruction) {
